@@ -14,11 +14,12 @@ Transfer your collected chest and collectible progress from **AppSample**
 | Luxurious Chest | ✅ | |
 | Remarkable Chest | ✅ | |
 | Puzzle Chest | ✅ | Only if tracked in AppSample |
+| Shrines of Depths | ✅ | All regions except Kuuhenki (not yet on HoYoLAB) |
+| Warming Seelie | ✅ | AppSample label 18 remapped to HoYoLAB label 148 |
+| Time Trial Challenges | ✅ | |
 | Crimson Agate | ✅ | |
-| Shrines of Depths | ❌ | HoYoLAB has no markers for these |
-| Warming Seelie | ❌ | HoYoLAB has no markers for these |
-| Lumenspar | ❌ | HoYoLAB has no markers for these |
-| Time Trial Challenges | ❌ | HoYoLAB has no markers for these |
+| Lumenspar | ❌ | Not mapped on HoYoLAB |
+| Kuuhenki Shrine | ❌ | Too new — HoYoLAB hasn't mapped it yet |
 | All Oculi | ❌ | Auto-sync via your HoYoLAB account — don't touch |
 
 > **Match rate:** Both databases are community-built independently, so not every
@@ -46,16 +47,17 @@ Transfer your collected chest and collectible progress from **AppSample**
 
 ```
 1/4  Fetching AppSample data...
-     Found 3554 AppSample items to match
+     Found 4907 AppSample items to match
 2/4  Fetching HoYoLAB marker database...
      category 13: 3333 markers
+     category 186: 4019 markers
      category 4: 1759 markers
 3/4  Matching coordinates (tolerance = 80 units)...
-     Matched: 574  |  No HoYoLAB marker: 2980
-4/4  Marking 574 points on HoYoLAB (120 ms/request)...
-     50/574 processed — 50 marked
+     Matched: 709  |  No HoYoLAB marker: 4198
+4/4  Marking 709 points on HoYoLAB (120 ms/request)...
+     50/709 processed — 50 marked
      ...
-✓ Done!  Marked: 574  |  Errors / already-marked: 0
+✓ Done!  Marked: 709  |  Errors / already-marked: 0
 ```
 
 ## How it works
@@ -72,7 +74,9 @@ Transfer your collected chest and collectible progress from **AppSample**
 |---|---|
 | `game-data.lemonapi.com/gim/markers_all.v5.json` | AppSample marker database |
 | `game-data.lemonapi.com/gim/collect_progress.v1.json` | Your AppSample cloud save |
-| `sg-public-api-static.hoyolab.com/.../v3/map/point/list` | HoYoLAB marker database |
+| `sg-public-api-static.hoyolab.com/.../v3/map/point/list?label_ids=13` | HoYoLAB chests |
+| `sg-public-api-static.hoyolab.com/.../v3/map/point/list?label_ids=186` | HoYoLAB puzzle/shrine/seelie/time-trial |
+| `sg-public-api-static.hoyolab.com/.../v3/map/point/list?label_ids=4` | HoYoLAB special items |
 | `sg-public-api.hoyolab.com/.../v1/map/point/add_mark_map_point` | Mark a point as collected |
 
 ## Limitations

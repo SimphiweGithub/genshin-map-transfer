@@ -15,13 +15,14 @@
  * WHAT TRANSFERS:
  *  - Common / Exquisite / Precious / Luxurious / Remarkable Chests
  *  - Puzzle Chests (if tracked in AppSample)
+ *  - Shrines of Depths (Mondstadt, Liyue, Inazuma, Sumeru, Fontaine, Natlan, Borderland)
+ *  - Warming Seelie
+ *  - Time Trial Challenges
  *  - Crimson Agate
  *
  * WHAT DOES NOT TRANSFER (HoYoLAB has no markers for these):
- *  - Shrines of Depths (any region)
- *  - Warming Seelie
  *  - Lumenspar
- *  - Time Trial Challenges
+ *  - Kuuhenki Shrine (too new, not yet mapped on HoYoLAB)
  *  - All Oculi types (these auto-sync via your HoYoLAB account anyway)
  *
  * COORDINATE CONVERSION:
@@ -34,6 +35,9 @@
 
 (async () => {
   // AppSample label number → { h: HoYoLAB label id, cat: API fetch category }
+  // cat 13  = Chests parent  (Common, Exquisite, Precious, Luxurious, Remarkable)
+  // cat 186 = Puzzle Chest parent (also contains Shrines, Seelies, Time Trials)
+  // cat 4   = Special Items parent (Crimson Agate, oculi, etc.)
   const LABEL_MAP = {
     17:  { h: 17,  cat: 13  },  // Common Chest
     44:  { h: 44,  cat: 13  },  // Exquisite Chest
@@ -41,6 +45,16 @@
     46:  { h: 46,  cat: 13  },  // Luxurious Chest
     269: { h: 269, cat: 13  },  // Remarkable Chest
     186: { h: 186, cat: 186 },  // Puzzle Chest
+    8:   { h: 8,   cat: 186 },  // Mondstadt Shrine of Depths
+    9:   { h: 9,   cat: 186 },  // Liyue Shrine of Depths
+    18:  { h: 148, cat: 186 },  // Warming Seelie (AppSample 18 → HoYoLAB 148)
+    64:  { h: 64,  cat: 186 },  // Time Trial Challenge
+    148: { h: 148, cat: 186 },  // Warming Seelie
+    212: { h: 212, cat: 186 },  // Inazuma Shrine of Depths
+    411: { h: 411, cat: 186 },  // Sumeru Shrine of Depths
+    509: { h: 509, cat: 186 },  // Fontaine Shrine of Depths
+    577: { h: 577, cat: 186 },  // Natlan Shrines of Depths
+    703: { h: 703, cat: 186 },  // Borderland Shrine of Depths
     141: { h: 141, cat: 4   },  // Crimson Agate
   };
 
