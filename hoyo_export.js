@@ -71,7 +71,8 @@
   console.log(`   Exportable: ${exportData.length}  |  Unknown category (skipped): ${unknown}`);
 
   window._hoyoExport = exportData;
-  copy(JSON.stringify(exportData));
-  console.log(`✓ Done!  ${exportData.length} points copied to clipboard.`);
-  console.log('  Next: open AppSample map → F12 → Console → run appsample_import.js');
+  console.log(`✓ Done!  ${exportData.length} points ready.`);
+  console.log('  Run this line to copy to clipboard:');
+  console.log('  copy(JSON.stringify(window._hoyoExport))');
+  console.log('  Then open AppSample map → F12 → Console → run appsample_import.js');
 })();
