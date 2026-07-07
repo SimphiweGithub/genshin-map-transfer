@@ -25,23 +25,18 @@
 
   // ── Step 1: fetch your collected point IDs ──────────────────────────────
   console.log('1/3  Fetching your HoYoLAB collected points...');
-  const marked = [];
-  let page = 1;
-  while (true) {
-    const r = await fetch(
-      `https://sg-public-api.hoyolab.com/common/map_user/ys_obc/v1/map/point/mark_map_point_list` +
-      `?map_id=2&app_sn=ys_obc&lang=en-us&page_num=${page}&page_size=500`,
-      { credentials: 'include', headers: { 'x-rpc-map_version': '4.5' } }
-    ).then(r => r.json());
+  // No custom headers here — x-rpc-map_version triggers a CORS preflight that hangs
+  const r = await fetch(
+    'https://sg-public-api.hoyolab.com/common/map_user/ys_obc/v1/map/point/mark_map_point_list' +
+    '?map_id=2&app_sn=ys_obc&lang=en-us',
+    { credentials: 'include' }
+  ).then(r => r.json());
 
-    if (r.retcode !== 0) {
-      console.error('Auth error — make sure you are logged in to HoYoLAB:', r.message);
-      return;
-    }
-    marked.push(...r.data.list);
-    if (r.data.list.length < 500) break;
-    page++;
+  if (r.retcode !== 0) {
+    console.error('Auth error — make sure you are logged in to HoYoLAB:', r.message);
+    return;
   }
+  const marked = r.data.list;
   console.log(`   Found ${marked.length} marked points total`);
 
   // ── Step 2: fetch HoYoLAB marker positions ──────────────────────────────
