@@ -1,8 +1,12 @@
 # Genshin Map Transfer
 
-Transfer your collected chest and collectible progress from **AppSample**
-(`genshin-impact-map.appsample.com`) to the **official HoYoLAB interactive map**
-(`act.hoyolab.com`), using a single browser console script.
+Transfer collected chest and collectible progress between the two Genshin interactive maps
+using browser console scripts — no installs required.
+
+| Direction | Script(s) | Where to run |
+|---|---|---|
+| AppSample → HoYoLAB | `transfer.js` | HoYoLAB map |
+| HoYoLAB → AppSample | `hoyo_export.js` then `appsample_import.js` | HoYoLAB map, then AppSample map |
 
 ## What transfers
 
@@ -28,20 +32,20 @@ Transfer your collected chest and collectible progress from **AppSample**
 
 ## Prerequisites
 
-- An AppSample account with **Free Cloud Save** enabled (your progress is synced)
-- A HoYoLAB account, logged in to the interactive map in your browser
+- Both accounts (AppSample with **Free Cloud Save** enabled, HoYoLAB)
 - Comfortable using browser DevTools (F12 → Console)
 
-## Usage
+---
+
+## AppSample → HoYoLAB (`transfer.js`)
 
 1. Log in to HoYoLAB and open the Genshin interactive map:
    ```
    https://act.hoyolab.com/ys/app/interactive-map/index.html
    ```
 2. Open DevTools → **Console** tab (`F12`)
-3. Copy the entire contents of [`transfer.js`](transfer.js)
-4. Paste into the console and press **Enter**
-5. Watch the progress logs — the script takes roughly **2 minutes per 1 000 items**
+3. Copy the entire contents of [`transfer.js`](transfer.js), paste, and press **Enter**
+4. Takes roughly **2 minutes per 1 000 items**
 
 ### Example output
 
@@ -60,30 +64,71 @@ Transfer your collected chest and collectible progress from **AppSample**
 ✓ Done!  Marked: 709  |  Errors / already-marked: 0
 ```
 
+---
+
+## HoYoLAB → AppSample (`hoyo_export.js` + `appsample_import.js`)
+
+This is a two-step process because the two maps are on different domains and can't share cookies.
+
+### Step 1 — Export from HoYoLAB
+
+1. Open the HoYoLAB Genshin interactive map (logged in):
+   ```
+   https://act.hoyolab.com/ys/app/interactive-map/index.html
+   ```
+2. Open DevTools → **Console** (`F12`)
+3. Paste [`hoyo_export.js`](hoyo_export.js) and press **Enter**
+4. When it finishes, your collected points are **automatically copied to the clipboard**
+
+### Step 2 — Import to AppSample
+
+1. Open the AppSample map (logged in, so changes save to cloud):
+   ```
+   https://genshin-impact-map.appsample.com/
+   ```
+2. Open DevTools → **Console** (`F12`)
+3. Open [`appsample_import.js`](appsample_import.js) and replace `null` on line 1 with the JSON from your clipboard:
+   ```javascript
+   const HOYO_DATA = [{"hx":1234.5,"hy":6789.0,"hLabel":17}, ...]; // ← paste here
+   ```
+4. Paste the edited script into the console and press **Enter**
+
+---
+
 ## How it works
 
-1. **Fetches your AppSample cloud progress** from `game-data.lemonapi.com` (CORS-open endpoint, no auth needed)
-2. **Fetches HoYoLAB's marker database** from `sg-public-api-static.hoyolab.com` (CDN-cached, no auth needed)
-3. **Converts coordinates** from AppSample's normalised `[0, 1]` space to HoYoLAB's pixel-space using the formula from [Adrien5902/genshin-map](https://github.com/Adrien5902)
-4. **Nearest-neighbour matches** each AppSample position to a HoYoLAB marker within 80 coordinate units
-5. **Marks each matched point** via `POST /map/point/add_mark_map_point` using your HoYoLAB session cookies (rate-limited to 120 ms/request)
+### AppSample → HoYoLAB
+1. Fetches your AppSample cloud save from `game-data.lemonapi.com` (no auth needed)
+2. Fetches HoYoLAB's marker database from `sg-public-api-static.hoyolab.com` (CDN-cached)
+3. Converts coordinates from AppSample's normalised `[0, 1]` space to HoYoLAB pixel-space
+4. Nearest-neighbour matches each collected AppSample item to a HoYoLAB marker (80 unit tolerance)
+5. Marks each match via `POST /map/point/add_mark_map_point` (rate-limited to 120 ms/request)
+
+### HoYoLAB → AppSample
+1. Fetches your HoYoLAB collected point IDs from `/v1/map/point/mark_map_point_list` (auth via cookies)
+2. Resolves each point ID to its coordinates via HoYoLAB's static marker database
+3. Converts coordinates back to AppSample normalised space (reverse of above formula)
+4. Nearest-neighbour matches each position to an AppSample marker (same 80 unit tolerance)
+5. Calls `window._markAsFound(id, label)` for each match on the AppSample page
 
 ## API endpoints used
 
 | Endpoint | Purpose |
 |---|---|
 | `game-data.lemonapi.com/gim/markers_all.v5.json` | AppSample marker database |
-| `game-data.lemonapi.com/gim/collect_progress.v1.json` | Your AppSample cloud save |
+| `game-data.lemonapi.com/gim/collect_progress.v1.json` | Your AppSample cloud save (AS→Hoyo only) |
 | `sg-public-api-static.hoyolab.com/.../v3/map/point/list?label_ids=13` | HoYoLAB chests |
 | `sg-public-api-static.hoyolab.com/.../v3/map/point/list?label_ids=186` | HoYoLAB puzzle/shrine/seelie/time-trial |
-| `sg-public-api-static.hoyolab.com/.../v3/map/point/list?label_ids=4` | HoYoLAB special items |
-| `sg-public-api.hoyolab.com/.../v1/map/point/add_mark_map_point` | Mark a point as collected |
+| `sg-public-api-static.hoyolab.com/.../v3/map/point/list?label_ids=4` | HoYoLAB special items (crimson agate) |
+| `sg-public-api.hoyolab.com/.../v1/map/point/add_mark_map_point` | Mark a point collected on HoYoLAB |
+| `sg-public-api.hoyolab.com/.../v1/map/point/mark_map_point_list` | Your HoYoLAB collected points (Hoyo→AS only) |
 
 ## Limitations
 
-- HoYoLAB's chest marker database covers only a subset of all in-game chests (community-contributed, not exhaustive)
-- Running the script a second time is safe — already-marked points return a non-zero retcode and are counted as errors, not double-marked
-- AppSample's cloud save URL (`collect_progress.v1.json`) must be publicly accessible; this is the default for Free Cloud Save accounts
+- HoYoLAB's marker database is community-contributed and not exhaustive — expect ~10–20% of items to find no match
+- Running either script a second time is safe — HoYoLAB returns a non-zero retcode for already-marked points; AppSample's `_markAsFound` silently skips already-found items
+- AppSample's cloud save URL must be publicly accessible (default for Free Cloud Save accounts)
+- Sub-maps (Chasm underground, Enkanomiya) use separate coordinate spaces — re-run the scripts with those maps open if needed
 
 ## License
 
