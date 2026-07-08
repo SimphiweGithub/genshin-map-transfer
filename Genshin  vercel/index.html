@@ -493,7 +493,7 @@
               <ol class="wish-hint-list">
                 <li>Open <strong>Genshin Impact</strong> → click any banner → <strong>History</strong> and let the page fully load</li>
                 <li>Close or minimise the game, then run this in <strong>PowerShell</strong> to copy the URL automatically:
-                  <div class="wish-ps-snippet"><code>(Get-Content "$env:USERPROFILE\AppData\LocalLow\miHoYo\Genshin Impact\output_log.txt" | Select-String "OnGetWebViewPageFinish" | Select-Object -Last 1) -replace ".*OnGetWebViewPageFinish:","" | Set-Clipboard; "Copied!"</code></div>
+                  <div class="wish-ps-snippet"><code>$l="$env:USERPROFILE\AppData\LocalLow\miHoYo\Genshin Impact\output_log.txt"; [regex]::Match((Get-Content $l | Select-String "authkey" | Select-Object -Last 1).Line,'https://[^\s]+').Value | Set-Clipboard; "Copied!"</code></div>
                 </li>
                 <li>Paste the copied URL below and click <strong>Fetch Wishes</strong>. Key expires in ~24 h.</li>
               </ol>
