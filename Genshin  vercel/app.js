@@ -551,7 +551,12 @@ async function handleRefresh() {
       state.weeklyBossesDone = 3 - d.remain_resin_discount_num;
 
       // Parse Parametric Transformer Cooldown
-      if (d.transformer && d.transformer.obtained) {
+      console.log('[Transformer] raw data:', JSON.stringify(d.transformer));
+      if (!d.transformer) {
+        state.transformerReadyAt = -1; // API returned no transformer field
+      } else if (!d.transformer.obtained) {
+        state.transformerReadyAt = -2; // API says not obtained/not tracked
+      } else {
         const rt = d.transformer.recovery_time;
         if (rt.reached) {
           state.transformerReadyAt = 0; // already ready
@@ -1098,7 +1103,11 @@ function appTimerLoop() {
 
   // 6. Parametric Transformer countdown
   const tReady = state.transformerReadyAt;
-  if (tReady > 0 && tReady > now) {
+  if (tReady === -1 || tReady === -2) {
+    document.getElementById("transformer-countdown").innerText = "—";
+    document.getElementById("transformer-date").innerText =
+      tReady === -1 ? "No data from API" : "Not tracked — use the HoYoLAB app once";
+  } else if (tReady > 0 && tReady > now) {
     const remaining = Math.floor((tReady - now) / 1000);
     document.getElementById("transformer-countdown").innerText = formatDuration(remaining);
     const readyDate = new Date(tReady);
