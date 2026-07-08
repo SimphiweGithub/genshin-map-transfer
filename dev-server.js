@@ -21,7 +21,9 @@ http.createServer((req, res) => {
     return;
   }
 
-  const filePath = path.join(BASE, req.url === '/' ? 'index.html' : req.url);
+  // Strip query string (e.g. app.js?v=4) so cache-busted assets resolve to real files
+  const urlPath = req.url.split('?')[0];
+  const filePath = path.join(BASE, urlPath === '/' ? 'index.html' : urlPath);
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not found'); return; }
     const ext = path.extname(filePath).toLowerCase();

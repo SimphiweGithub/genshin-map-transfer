@@ -1411,6 +1411,61 @@ kbd {
 
 @keyframes pity-pulse { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
 
+/* Pity extras */
+.pity-tosoft { font-size: .62rem; color: rgba(255,255,255,.5); }
+.pity-hot { color: #ffb454; font-weight: 600; }
+.pity-guarantee { font-size: .6rem; font-weight: 600; padding: 2px 6px; border-radius: 5px; margin-top: 2px; align-self: flex-start; }
+.pity-guarantee.guaranteed { background: rgba(116,194,160,.14); color: #74c2a0; border: 1px solid rgba(116,194,160,.3); }
+.pity-guarantee.coinflip   { background: rgba(255,255,255,.05); color: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.12); }
+
+/* 50/50 & Guarantees */
+.fifty-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.fifty-block {
+  background: rgba(255,255,255,.04);
+  border: 1px solid color-mix(in srgb, var(--pity-color) 25%, transparent);
+  border-top: 2px solid var(--pity-color);
+  border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.fifty-head { display: flex; justify-content: space-between; align-items: baseline; }
+.fifty-title { font-family: "Cinzel", serif; font-size: .95rem; color: #fff; font-weight: 600; }
+.fifty-flip { font-size: .6rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,.4); }
+.fifty-rate-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.fifty-rate { display: flex; flex-direction: column; align-items: flex-start; }
+.fifty-rate-val { font-family: "Cinzel", serif; font-size: 2rem; font-weight: 700; color: var(--pity-color); line-height: 1; }
+.fifty-rate-lbl { font-size: .6rem; text-transform: uppercase; letter-spacing: .7px; color: rgba(255,255,255,.4); }
+.fifty-record { text-align: right; font-size: .9rem; }
+.fifty-record .ff-w { color: #74c2a0; font-weight: 700; }
+.fifty-record .ff-l { color: #e07a7a; font-weight: 700; }
+.fifty-record-lbl { font-size: .58rem; color: rgba(255,255,255,.35); }
+.fifty-guar { font-size: .68rem; font-weight: 600; padding: 5px 8px; border-radius: 6px; text-align: center; }
+.fifty-guar.guaranteed { background: rgba(116,194,160,.14); color: #74c2a0; border: 1px solid rgba(116,194,160,.3); }
+.fifty-guar.coinflip   { background: rgba(255,255,255,.05); color: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.12); }
+.fifty-luck { display: flex; justify-content: space-between; font-size: .62rem; color: rgba(255,255,255,.45); }
+.fifty-luck strong { color: #fff; font-size: .78rem; }
+.fifty-strip { display: flex; flex-wrap: wrap; gap: 4px; }
+.ff-dot { width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .6rem; font-weight: 700; }
+.ff-dot.ff-won  { background: rgba(116,194,160,.2); color: #74c2a0; border: 1px solid rgba(116,194,160,.4); }
+.ff-dot.ff-lost { background: rgba(224,122,122,.2); color: #e07a7a; border: 1px solid rgba(224,122,122,.4); }
+.ff-dot.ff-guar { background: rgba(200,160,64,.2); color: #d4a017; border: 1px solid rgba(200,160,64,.4); }
+
+/* Pull Planner */
+.planner-inputs { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.planner-field { display: flex; flex-direction: column; gap: 4px; font-size: .62rem; text-transform: uppercase; letter-spacing: .7px; color: rgba(255,255,255,.45); }
+.planner-field input {
+  background: rgba(255,255,255,.05); border: 1px solid rgba(200,160,90,.2); border-radius: 8px;
+  padding: 8px 10px; color: #fff; font-size: .95rem; width: 160px; font-family: "Cinzel", serif;
+}
+.planner-field input:focus { outline: none; border-color: var(--gold-primary); }
+.planner-total { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px; background: rgba(200,160,90,.06); border-radius: 10px; margin-bottom: 12px; }
+.planner-total-val { font-family: "Cinzel", serif; font-size: 2.4rem; font-weight: 700; color: var(--gold-primary); line-height: 1; }
+.planner-total-lbl { font-size: .62rem; color: rgba(255,255,255,.4); }
+.planner-row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,.05); font-size: .78rem; flex-wrap: wrap; }
+.planner-row-name { font-weight: 600; min-width: 120px; }
+.planner-row-detail { color: rgba(255,255,255,.6); }
+.planner-row-detail strong { color: #fff; }
+.planner-ok { color: #74c2a0; font-weight: 600; margin-left: 6px; }
+.planner-short { color: #e07a7a; font-weight: 600; margin-left: 6px; }
+
 /* Lifetime stats */
 .wish-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
 .wish-stat-box { display: flex; flex-direction: column; align-items: center; gap: 2px; background: rgba(255,255,255,.03); border: 1px solid rgba(200,160,90,.1); border-radius: 8px; padding: 10px 8px; }

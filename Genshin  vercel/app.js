@@ -1610,12 +1610,29 @@ window.closeCharDetail = function() {
 // ═══════════════════════════════════════════════════════
 
 const GACHA_BANNERS = [
-  { type: '301', name: 'Character Event', softPity: 74, hardPity: 90,  color: '#ef7027' },
-  { type: '302', name: 'Weapon Event',    softPity: 63, hardPity: 80,  color: '#9f71cf' },
+  // The Character Event banner logs pulls under BOTH 301 and 400 (two banners
+  // that share one pity counter). altTypes merges 400's pulls into this bucket
+  // so pity and stats are correct.
+  { type: '301', name: 'Character Event', softPity: 74, hardPity: 90,  color: '#ef7027', altTypes: ['400'], fiftyFifty: 'char' },
+  { type: '302', name: 'Weapon Event',    softPity: 63, hardPity: 80,  color: '#9f71cf', fiftyFifty: 'weapon' },
   { type: '200', name: 'Standard',        softPity: 74, hardPity: 90,  color: '#47bfe0' },
   { type: '100', name: 'Beginner',        softPity: 74, hardPity: 90,  color: '#74c2a0' },
   { type: '500', name: 'Chronicled',      softPity: 74, hardPity: 90,  color: '#c8a040' },
 ];
+
+// Permanent-pool 5★s. On the Character banner, pulling one of these = a LOST
+// 50/50 (you didn't get the featured unit). Any other 5★ = a WON 50/50.
+// This pool is stable; update only if HoYoverse adds a unit to the standard pool.
+const STANDARD_5STAR_CHARS = ['Diluc', 'Jean', 'Keqing', 'Mona', 'Qiqi', 'Tighnari', 'Dehya'];
+const STANDARD_5STAR_WEAPONS = [
+  "Amos' Bow", 'Aquila Favonia', 'Lost Prayer to the Sacred Winds', 'Memory of Dust',
+  'Primordial Jade Winged-Spear', 'Skyward Atlas', 'Skyward Blade', 'Skyward Harp',
+  'Skyward Pride', 'Skyward Spine', 'Summit Shaper', 'The Unforged', "Wolf's Gravestone",
+];
+// Normalize names so curly/straight quotes and case don't cause false misses.
+const normName = s => (s || '').toLowerCase().replace(/[‘’′`']/g, "'").trim();
+const STD_CHARS_SET   = new Set(STANDARD_5STAR_CHARS.map(normName));
+const STD_WEAPONS_SET = new Set(STANDARD_5STAR_WEAPONS.map(normName));
 
 const WISH_STORAGE_KEY = 'teyvatChrono_wishes_v1';
 
@@ -1650,20 +1667,21 @@ async function fetchWishPage(baseParams, gachaType, endId) {
   return r.json();
 }
 
-// Fetch all pages for a banner type, merging with existing
-async function fetchBannerAll(baseParams, banner, existingIds, onProgress) {
+// Fetch all pages for a single gacha_type, stopping at already-seen wishes.
+async function fetchTypeAll(baseParams, gachaType, label, existingIds, onProgress) {
   const wishes = [];
   let endId = '0';
   let page = 0;
 
   while (true) {
     page++;
-    onProgress(`${banner.name} — page ${page} (${wishes.length} pulled so far)…`);
-    const data = await fetchWishPage(baseParams, banner.type, endId);
+    onProgress(`${label} — page ${page} (${wishes.length} pulled so far)…`);
+    const data = await fetchWishPage(baseParams, gachaType, endId);
 
     if (data.retcode !== 0) {
       if (data.retcode === -101) throw new Error('AuthKey expired. Please get a fresh URL from the game.');
-      console.warn(`Banner ${banner.type} retcode ${data.retcode}:`, data.message);
+      if (data.retcode === -100) throw new Error('AuthKey invalid. Please get a fresh URL from the game.');
+      console.warn(`Banner ${gachaType} retcode ${data.retcode}:`, data.message);
       break;
     }
 
@@ -1684,6 +1702,49 @@ async function fetchBannerAll(baseParams, banner, existingIds, onProgress) {
   }
 
   return wishes;
+}
+
+// Fetch a banner (its main type plus any altTypes, e.g. 400 for the character
+// banner) and merge into one list.
+async function fetchBannerAll(baseParams, banner, existingIds, onProgress) {
+  const types = [banner.type, ...(banner.altTypes || [])];
+  let all = [];
+  for (const t of types) {
+    const part = await fetchTypeAll(baseParams, t, banner.name, existingIds, onProgress);
+    all = all.concat(part);
+  }
+  return all;
+}
+
+// ── 50/50 analysis ──────────────────────────────────────
+// fiveStars: 5★ pulls, NEWEST-first (as stored). mode: 'char' | 'weapon'.
+// Walks chronologically tracking the guarantee flag: a lost 50/50 makes the
+// next 5★ a guaranteed featured (which isn't itself a 50/50 roll).
+function analyzeFiftyFifty(fiveStars, mode) {
+  const pool = mode === 'weapon' ? STD_WEAPONS_SET : STD_CHARS_SET;
+  const chrono = [...fiveStars].reverse(); // oldest → newest
+  let wins = 0, losses = 0, guaranteed = false;
+  const history = [];
+  for (const w of chrono) {
+    const isStandard = pool.has(normName(w.name));
+    if (guaranteed) {
+      history.push({ name: w.name, result: 'guaranteed', time: w.time });
+      guaranteed = false;                       // guarantee consumed
+    } else if (isStandard) {
+      losses++; guaranteed = true;              // lost → next is guaranteed
+      history.push({ name: w.name, result: 'lost', time: w.time });
+    } else {
+      wins++;                                   // won → stays 50/50
+      history.push({ name: w.name, result: 'won', time: w.time });
+    }
+  }
+  const rolls = wins + losses;
+  return {
+    wins, losses, rolls,
+    rate: rolls ? wins / rolls : null,
+    guaranteedNext: guaranteed,
+    history: history.reverse(),                 // newest-first for display
+  };
 }
 
 // Compute pity for a banner (wishes sorted newest-first)
@@ -1776,15 +1837,34 @@ function renderWishUI(data) {
     const stats  = bannerStats(wishes);
     const danger = pity >= b.softPity;
     const pct    = Math.min(100, Math.round(pity / b.hardPity * 100));
+    const toSoft = Math.max(0, b.softPity - pity);
+
+    // Guarantee badge for banners with a 50/50
+    let guarBadge = '';
+    if (b.fiftyFifty) {
+      const ff = analyzeFiftyFifty(wishes.filter(w => w.rank_type === '5'), b.fiftyFifty);
+      guarBadge = ff.guaranteedNext
+        ? `<div class="pity-guarantee guaranteed">✓ Next 5★ guaranteed</div>`
+        : `<div class="pity-guarantee coinflip">⚄ Next 5★ is a 50/50</div>`;
+    }
+    const toSoftLine = toSoft > 0
+      ? `${toSoft} to soft pity`
+      : `<span class="pity-hot">soft pity — pull now!</span>`;
+
     return `
       <div class="pity-card" style="--pity-color:${b.color}">
         <div class="pity-name">${b.name}</div>
         <div class="pity-count ${danger ? 'pity-danger' : ''}">${pity}</div>
         <div class="pity-label">pulls since last ✦5</div>
         <div class="pity-bar"><div class="pity-fill" style="width:${pct}%;background:${b.color}"></div></div>
+        <div class="pity-tosoft">${toSoftLine}</div>
+        ${guarBadge}
         <div class="pity-sub">${stats.total.toLocaleString()} total · ${stats.fiveStars} ✦5${stats.avgPity ? ` · avg pity ${stats.avgPity}` : ''}</div>
       </div>`;
   }).join('');
+
+  renderFiftyFifty(data);
+  renderPlanner(data);
 
   // Lifetime stats
   const allWishes = Object.values(data.banners).flat();
@@ -1810,6 +1890,127 @@ function renderWishUI(data) {
     .join('');
 
   renderWishList(data, state._wishFilter || 'all');
+}
+
+// Pity value of every 5★ (pulls since the previous 5★), chronological order.
+function fiveStarPities(wishes) {
+  const chrono = [...wishes].reverse();
+  const out = [];
+  let count = 0;
+  for (const w of chrono) {
+    count++;
+    if (parseInt(w.rank_type) === 5) {
+      out.push({ name: w.name, pity: count, time: w.time, item_type: w.item_type });
+      count = 0;
+    }
+  }
+  return out;
+}
+
+// 50/50 & Guarantees card — character + weapon banners
+function renderFiftyFifty(data) {
+  const card = document.getElementById('fifty-card');
+  const wrap = document.getElementById('fifty-grid');
+  if (!card || !wrap) return;
+
+  const banners = GACHA_BANNERS.filter(b => b.fiftyFifty && (data.banners[b.type] || []).some(w => w.rank_type === '5'));
+  if (!banners.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+
+  wrap.innerHTML = banners.map(b => {
+    const wishes    = data.banners[b.type] || [];
+    const fiveStars = wishes.filter(w => w.rank_type === '5');
+    const ff        = analyzeFiftyFifty(fiveStars, b.fiftyFifty);
+    const pities    = fiveStarPities(wishes);
+    const pityVals  = pities.map(p => p.pity);
+    const best      = pityVals.length ? Math.min(...pityVals) : null;
+    const worst     = pityVals.length ? Math.max(...pityVals) : null;
+    const avg       = pityVals.length ? Math.round(pityVals.reduce((a, c) => a + c, 0) / pityVals.length) : null;
+    const ratePct   = ff.rate == null ? '—' : `${Math.round(ff.rate * 100)}%`;
+    const flip      = b.fiftyFifty === 'weapon' ? '75/25' : '50/50';
+
+    // Recent 5★ result strip (newest first, cap 14)
+    const strip = ff.history.slice(0, 14).map(h => {
+      const cls = h.result === 'won' ? 'ff-won' : h.result === 'lost' ? 'ff-lost' : 'ff-guar';
+      const tip = `${h.name} — ${h.result === 'guaranteed' ? 'guaranteed' : h.result + ' ' + flip}`;
+      const sym = h.result === 'won' ? '✓' : h.result === 'lost' ? '✕' : '★';
+      return `<span class="ff-dot ${cls}" title="${tip}">${sym}</span>`;
+    }).join('');
+
+    return `
+      <div class="fifty-block" style="--pity-color:${b.color}">
+        <div class="fifty-head">
+          <span class="fifty-title">${b.name}</span>
+          <span class="fifty-flip">${flip}</span>
+        </div>
+        <div class="fifty-rate-row">
+          <div class="fifty-rate"><span class="fifty-rate-val">${ratePct}</span><span class="fifty-rate-lbl">win rate</span></div>
+          <div class="fifty-record"><span class="ff-w">${ff.wins}W</span> · <span class="ff-l">${ff.losses}L</span><br><span class="fifty-record-lbl">${ff.rolls} ${flip} rolls</span></div>
+        </div>
+        <div class="fifty-guar ${ff.guaranteedNext ? 'guaranteed' : 'coinflip'}">
+          ${ff.guaranteedNext ? '✓ Next 5★ guaranteed featured' : `⚄ Next 5★ is a ${flip}`}
+        </div>
+        <div class="fifty-luck">
+          <span>Best <strong>${best ?? '—'}</strong></span>
+          <span>Avg <strong>${avg ?? '—'}</strong></span>
+          <span>Worst <strong>${worst ?? '—'}</strong></span>
+        </div>
+        ${strip ? `<div class="fifty-strip">${strip}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+// Pull Planner — converts primogems/fate into pulls and shows worst-case
+// distance to a guaranteed featured 5★ on the character banner.
+const PLANNER_KEY = 'teyvatChrono_planner_v1';
+function loadPlanner() {
+  try { return JSON.parse(localStorage.getItem(PLANNER_KEY) || '{}'); } catch { return {}; }
+}
+function savePlanner(p) { localStorage.setItem(PLANNER_KEY, JSON.stringify(p)); }
+
+function renderPlanner(data) {
+  const card = document.getElementById('planner-card');
+  if (!card) return;
+  card.style.display = '';
+
+  const p = loadPlanner();
+  const primos = Math.max(0, parseInt(p.primos) || 0);
+  const fate   = Math.max(0, parseInt(p.fate)   || 0);
+  const totalPulls = Math.floor(primos / 160) + fate;
+
+  const out = document.getElementById('planner-output');
+  if (!out) return;
+
+  // Worst-case pulls to next featured 5★ per 50/50 banner
+  const rows = GACHA_BANNERS.filter(b => b.fiftyFifty).map(b => {
+    const wishes = data.banners[b.type] || [];
+    const { pity } = calcPity(wishes);
+    const ff = analyzeFiftyFifty(wishes.filter(w => w.rank_type === '5'), b.fiftyFifty);
+    // Guaranteed featured worst case: reach hard pity now; if not guaranteed,
+    // you might lose the flip first, then guarantee at the next hard pity.
+    const worstGuarantee = ff.guaranteedNext
+      ? (b.hardPity - pity)
+      : (b.hardPity - pity) + b.hardPity;
+    const enough = totalPulls >= worstGuarantee;
+    const short  = Math.max(0, worstGuarantee - totalPulls);
+    return `
+      <div class="planner-row">
+        <span class="planner-row-name" style="color:${b.color}">${b.name}</span>
+        <span class="planner-row-detail">
+          worst-case <strong>${worstGuarantee}</strong> pulls to guaranteed featured
+          ${enough
+            ? `<span class="planner-ok">✓ you have enough</span>`
+            : `<span class="planner-short">need ${short} more</span>`}
+        </span>
+      </div>`;
+  }).join('');
+
+  out.innerHTML = `
+    <div class="planner-total">
+      <span class="planner-total-val">${totalPulls.toLocaleString()}</span>
+      <span class="planner-total-lbl">pulls available (${primos.toLocaleString()} primogems ÷ 160 + ${fate} fate)</span>
+    </div>
+    ${rows}`;
 }
 
 function renderWishList(data, filterType) {
@@ -1881,6 +2082,20 @@ function initWishTab() {
     renderWishList(data, btn.dataset.type);
     renderWishUI(data);
   });
+
+  // Pull planner inputs — persist and re-render on change
+  const plannerData = loadPlanner();
+  const primosInput = document.getElementById('planner-primos');
+  const fateInput   = document.getElementById('planner-fate');
+  if (primosInput) primosInput.value = plannerData.primos || '';
+  if (fateInput)   fateInput.value   = plannerData.fate   || '';
+  const onPlannerChange = () => {
+    savePlanner({ primos: primosInput?.value || '', fate: fateInput?.value || '' });
+    const d = loadStoredWishes();
+    if (d) renderPlanner(d);
+  };
+  primosInput?.addEventListener('input', onPlannerChange);
+  fateInput?.addEventListener('input', onPlannerChange);
 
   // Load any previously stored data on tab open
   const stored = loadStoredWishes();
