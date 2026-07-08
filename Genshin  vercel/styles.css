@@ -1202,3 +1202,163 @@ kbd {
 
 .char-card { cursor: pointer; transition: transform .15s, box-shadow .15s; }
 .char-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+
+/* ═══════════════════════════════════════════════════════
+   Account Stats Grid (expanded)
+═══════════════════════════════════════════════════════ */
+.account-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 12px;
+}
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(200,160,90,.12);
+  border-radius: 8px;
+  padding: 8px 4px;
+  gap: 2px;
+}
+.stat-box .val {
+  font-family: "Cinzel", serif;
+  font-size: 1rem;
+  color: var(--gold-primary);
+  font-weight: 700;
+  line-height: 1.1;
+}
+.stat-box .lbl {
+  font-size: .58rem;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: rgba(255,255,255,.4);
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Oculi Tracker
+═══════════════════════════════════════════════════════ */
+.oculi-tracker { margin-bottom: 16px; }
+
+.oculi-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.oculus-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(200,160,90,.15);
+  border-radius: 20px;
+  padding: 5px 12px 5px 8px;
+  font-size: .78rem;
+  cursor: default;
+}
+
+.oculus-count {
+  font-weight: 700;
+  font-size: .85rem;
+}
+
+.oculus-max {
+  color: rgba(255,255,255,.3);
+  font-size: .72rem;
+}
+
+.oculus-pct {
+  font-size: .68rem;
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+.oculus-label {
+  color: rgba(255,255,255,.5);
+  font-size: .65rem;
+  margin-left: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Exploration Cards (improved)
+═══════════════════════════════════════════════════════ */
+.explorations-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.explore-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(200,160,90,.12);
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: border-color .2s;
+}
+.explore-card:hover { border-color: rgba(200,160,90,.3); }
+.explore-card.explore-complete { border-color: rgba(200,160,90,.35); }
+
+.explore-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.explore-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.explore-title-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.explore-name {
+  font-family: "Cinzel", serif;
+  font-size: .82rem;
+  color: var(--text-primary);
+}
+
+.explore-offerings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.offering-badge {
+  font-size: .6rem;
+  color: rgba(255,255,255,.45);
+  background: rgba(255,255,255,.05);
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+.offering-badge strong { color: rgba(200,160,90,.8); }
+
+.explore-pct-badge {
+  font-size: .95rem;
+  font-weight: 700;
+  font-family: "Cinzel", serif;
+  flex-shrink: 0;
+}
+
+.explore-bar {
+  height: 4px;
+  background: rgba(255,255,255,.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.explore-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width .4s ease;
+}

@@ -613,7 +613,29 @@ async function handleRefresh() {
       state.playerInfo = idx.role;
       state.playerInfo.stats = idx.stats;
       state.explorations = idx.world_explorations || [];
-      state.characters = idx.avatars || [];
+      state.characters  = idx.avatars || [];
+      if (idx.stats) {
+        const s = idx.stats;
+        state.oculi = {
+          anemo:   s.anemoculus_number  || 0,
+          geo:     s.geoculus_number    || 0,
+          electro: s.electroculus_number|| 0,
+          dendro:  s.dendroculus_number || 0,
+          hydro:   s.hydroculus_number  || 0,
+          pyro:    s.pyroculus_number   || 0,
+          cryo:    s.cryoculus_number   || 0,
+        };
+        state.accountStats = {
+          days:       s.active_day_number     || 0,
+          achievements: s.achievement_number  || 0,
+          characters: s.avatar_number         || 0,
+          waypoints:  s.way_point_number      || 0,
+          abyss:      s.spiral_abyss          || '—',
+          chests:     (s.precious_chest_number || 0) + (s.luxurious_chest_number || 0) +
+                      (s.exquisite_chest_number || 0) + (s.common_chest_number || 0) +
+                      (s.magic_chest_number || 0),
+        };
+      }
     } else {
       errorsOccurred.push(`Character catalog: ${indexData.message} (retcode ${indexData.retcode})`);
     }
@@ -1255,23 +1277,20 @@ function updateUI() {
     document.getElementById("player-nickname").innerText = state.playerInfo.nickname || "Traveler";
     document.getElementById("player-level").innerText = `AR ${state.playerInfo.level || '--'}`;
     
-    if (state.playerInfo.stats) {
-      const s = state.playerInfo.stats;
-      document.getElementById("stat-days").innerText = s.active_day_number || "--";
-      document.getElementById("stat-achievements").innerText = s.achievement_number || "--";
-      
-      const chestCount = (s.precious_chest_number || 0) + (s.luxurious_chest_number || 0) + 
-                         (s.exquisite_chest_number || 0) + (s.common_chest_number || 0);
-      document.getElementById("stat-chests").innerText = chestCount || "--";
-    }
+    const a = state.accountStats || {};
+    document.getElementById("stat-days").innerText        = a.days         || "--";
+    document.getElementById("stat-achievements").innerText= a.achievements  || "--";
+    document.getElementById("stat-characters").innerText  = a.characters    || "--";
+    document.getElementById("stat-abyss").innerText       = a.abyss         || "--";
+    document.getElementById("stat-waypoints").innerText   = a.waypoints     || "--";
+    document.getElementById("stat-chests").innerText      = a.chests        || "--";
   } else {
     accCard.classList.add("locked");
     document.getElementById("player-avatar").src = "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png";
-    document.getElementById("player-nickname").innerText = "Traveler (Locked)";
-    document.getElementById("player-level").innerText = "AR --";
-    document.getElementById("stat-days").innerText = "--";
-    document.getElementById("stat-achievements").innerText = "--";
-    document.getElementById("stat-chests").innerText = "--";
+    document.getElementById("player-nickname").innerText  = "Traveler (Locked)";
+    document.getElementById("player-level").innerText     = "AR --";
+    ["stat-days","stat-achievements","stat-characters","stat-abyss","stat-waypoints","stat-chests"]
+      .forEach(id => document.getElementById(id).innerText = "--");
   }
 
   // Daily checkin widget
@@ -1297,6 +1316,7 @@ function updateUI() {
   updateCharactersCatalogUI();
 
   // Exploration Map UI
+  updateOculiTracker();
   updateExplorationsUI();
 
   // Spiral Abyss UI
@@ -1621,6 +1641,40 @@ function updateCharactersCatalogUI() {
   container.innerHTML = html;
 }
 
+// Oculi max values (updated through Natlan 5.x)
+const OCULI_MAX = { anemo: 65, geo: 131, electro: 181, dendro: 271, hydro: 131, pyro: 60, cryo: 0 };
+const OCULI_LABELS = { anemo: 'Anemoculi', geo: 'Geoculi', electro: 'Electroculi', dendro: 'Dendroculi', hydro: 'Hydroculi', pyro: 'Pyroculi', cryo: 'Cryoculi' };
+
+function updateOculiTracker() {
+  const el = document.getElementById('oculi-tracker');
+  if (!el) return;
+  const o = state.oculi;
+  if (!o) { el.innerHTML = ''; return; }
+
+  const entries = Object.entries(o).filter(([k, v]) => v > 0 || OCULI_MAX[k] > 0);
+  if (!entries.length) { el.innerHTML = ''; return; }
+
+  const chips = entries.map(([key, count]) => {
+    const max   = OCULI_MAX[key];
+    const icon  = ELEMENT_ICONS[key.charAt(0).toUpperCase() + key.slice(1)];
+    const col   = icon ? icon.color : '#aaa';
+    const pct   = max ? Math.round(count / max * 100) : null;
+    const badge = max ? `<span class="oculus-pct" style="color:${col}">${pct}%</span>` : '';
+    const img   = icon && icon.path
+      ? `<img src="${icon.path}" alt="${key}" style="width:18px;height:18px;vertical-align:middle;margin-right:4px">`
+      : '';
+    return `
+      <div class="oculus-chip" title="${OCULI_LABELS[key]}: ${count}${max ? ' / ' + max : ''}">
+        ${img}<span class="oculus-count" style="color:${col}">${count}</span>
+        ${max ? `<span class="oculus-max">/ ${max}</span>` : ''}
+        ${badge}
+        <span class="oculus-label">${OCULI_LABELS[key]}</span>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="oculi-row">${chips}</div>`;
+}
+
 // Draw Explorations World Map
 function updateExplorationsUI() {
   const container = document.getElementById("explorations-grid");
@@ -1629,33 +1683,32 @@ function updateExplorationsUI() {
     return;
   }
 
+  const sorted = [...state.explorations].sort((a, b) => b.exploration_percentage - a.exploration_percentage);
   let html = "";
-  state.explorations.forEach(exp => {
-    // exploration_percentage is returned as permille (e.g. 1000 is 100%)
+  sorted.forEach(exp => {
     const pct = exp.exploration_percentage / 10;
-    const mapIconUrl = (exp.icon && exp.icon.startsWith('http')) ? exp.icon : 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
-    
+    const mapIconUrl = (exp.icon && exp.icon.startsWith('http'))
+      ? exp.icon : 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
+    const pctColor = pct >= 100 ? '#c8a05a' : pct >= 80 ? '#74c2a0' : pct >= 50 ? '#47bfe0' : 'rgba(255,255,255,.6)';
+
+    const offeringBadges = (exp.offerings || []).map(o =>
+      `<span class="offering-badge">${o.name} <strong>Lv.${o.level}</strong></span>`
+    ).join('');
+
     html += `
-      <div class="explore-card">
+      <div class="explore-card${pct >= 100 ? ' explore-complete' : ''}">
         <div class="explore-header">
-          <img src="${mapIconUrl}" class="explore-icon" alt="${exp.name}">
-          <div>
+          <img src="${mapIconUrl}" class="explore-icon" alt="${exp.name}" onerror="this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
+          <div class="explore-title-col">
             <span class="explore-name">${exp.name}</span>
-            ${exp.offerings && exp.offerings.length > 0 
-              ? `<div class="explore-level">${exp.offerings[0].name} Level ${exp.offerings[0].level}</div>` 
-              : ""
-            }
+            ${offeringBadges ? `<div class="explore-offerings">${offeringBadges}</div>` : ''}
           </div>
-        </div>
-        <div class="explore-pct-box">
-          <span>Explored</span>
-          <span class="text-cyan">${pct.toFixed(1)}%</span>
+          <span class="explore-pct-badge" style="color:${pctColor}">${pct.toFixed(1)}%</span>
         </div>
         <div class="explore-bar">
-          <div class="explore-fill" style="width: ${pct}%;"></div>
+          <div class="explore-fill" style="width:${Math.min(pct,100)}%;background:${pctColor}"></div>
         </div>
-      </div>
-    `;
+      </div>`;
   });
 
   container.innerHTML = html;
