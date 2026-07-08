@@ -1628,33 +1628,25 @@ function saveStoredWishes(data) {
   localStorage.setItem(WISH_STORAGE_KEY, JSON.stringify(data));
 }
 
-// Fetch one page of 20 wishes directly from HoYoverse (browser CORS allowed).
-// baseParams holds the full parsed URL params from the user's pasted URL.
-// We ONLY forward the API-relevant params — the webview URL also contains junk
-// like win_mode, no_joypad_d, plat_type that confuse the backend and cause 504.
+// Fetch one page of 20 wishes via our Vercel proxy.
+// We CANNOT fetch the gacha API directly from the browser: it sends no CORS
+// headers, so the browser blocks the response. The proxy runs server-side and
+// forwards to the live endpoint. baseParams = parsed params from the pasted URL.
 async function fetchWishPage(baseParams, gachaType, endId) {
-  const biz  = baseParams.game_biz || 'hk4e_global';
-  const host = (biz === 'hk4e_cn' || biz.startsWith('cn_'))
-    ? 'hk4e-api.mihoyo.com'
-    : 'hk4e-api-os.hoyoverse.com';
-
   const qs = new URLSearchParams({
-    authkey_ver: baseParams.authkey_ver || '1',
-    sign_type:   baseParams.sign_type   || '2',
-    auth_appid:  baseParams.auth_appid  || 'webview_gacha',
-    region:      baseParams.region      || '',
-    lang:        baseParams.lang        || 'en',
-    game_biz:    biz,
     authkey:     baseParams.authkey,
     gacha_type:  gachaType,
-    init_type:   gachaType,
-    page:        '1',
-    size:        '20',
     end_id:      endId || '0',
+    game_biz:    baseParams.game_biz || 'hk4e_global',
+    lang:        baseParams.lang || 'en',
+    region:      baseParams.region || '',
+    authkey_ver: baseParams.authkey_ver || '1',
+    sign_type:   baseParams.sign_type || '2',
+    auth_appid:  baseParams.auth_appid || 'webview_gacha',
   });
 
-  const r = await fetch(`https://${host}/event/gacha_info/api/getGachaLog?${qs}`);
-  if (!r.ok) throw new Error(`HTTP ${r.status} from ${host}`);
+  const r = await fetch(`/api/wishes?${qs}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
 }
 
@@ -1976,12 +1968,18 @@ function updateExplorationsUI() {
     return;
   }
 
+  // HoYoverse's city_icon CDN 404s for newer regions (Natlan/Nata, Nordkalei, …).
+  // Skip those known-dead icons up front so the browser never logs a 404.
+  const PAIMON = 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
+  const DEAD_EXPLORE_ICONS = ['UI_ChapterIcon_Nata', 'UI_ChapterIcon_Nordkalei'];
+  const iconIsDead = (u) => DEAD_EXPLORE_ICONS.some(bad => u.includes(bad));
+
   const sorted = [...state.explorations].sort((a, b) => b.exploration_percentage - a.exploration_percentage);
   let html = "";
   sorted.forEach(exp => {
     const pct = exp.exploration_percentage / 10;
-    const mapIconUrl = (exp.icon && exp.icon.startsWith('http'))
-      ? exp.icon : 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
+    const mapIconUrl = (exp.icon && exp.icon.startsWith('http') && !iconIsDead(exp.icon))
+      ? exp.icon : PAIMON;
     const pctColor = pct >= 100 ? '#c8a05a' : pct >= 80 ? '#74c2a0' : pct >= 50 ? '#47bfe0' : 'rgba(255,255,255,.6)';
 
     const offeringBadges = (exp.offerings || []).map(o =>

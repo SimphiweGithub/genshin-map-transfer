@@ -94,7 +94,10 @@ module.exports = async (req, res) => {
         break;
 
       case 'ysLedger':
-        url = `https://hk4e-api-os.hoyoverse.com/event/ysledger/month_info?month=0&bind_uid=${uid}&bind_region=${server}&lang=en-us`;
+        // Modern Traveler's Diary endpoint. Old hk4e-api-os.hoyoverse.com host
+        // is dead (hangs -> 504); use ysledgeros on sg-hk4e-api.hoyolab.com.
+        url = `https://sg-hk4e-api.hoyolab.com/event/ysledgeros/month_info?month=0&uid=${uid}&region=${server}&lang=en-us`;
+        headers['DS'] = generateDS();
         break;
 
       case 'dailyCheckIn':
