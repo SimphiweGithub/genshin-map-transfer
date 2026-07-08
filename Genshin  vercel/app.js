@@ -1628,39 +1628,30 @@ function saveStoredWishes(data) {
   localStorage.setItem(WISH_STORAGE_KEY, JSON.stringify(data));
 }
 
-// Fetch one page of 20 wishes via our proxy
-async function fetchWishPage(authkey, gachaType, endId, gameBiz, lang) {
-  // Fetch directly from HoYoverse — their gacha API allows browser CORS.
-  // Going through our Vercel proxy causes 504s because HoYoverse blocks datacenter IPs.
-  const biz  = gameBiz || 'hk4e_global';
+// Fetch one page of 20 wishes directly from HoYoverse (browser CORS allowed).
+// baseParams = all query params from the URL the user pasted — preserves region, sign_type, etc.
+async function fetchWishPage(baseParams, gachaType, endId) {
+  const biz  = baseParams.game_biz || 'hk4e_global';
   const host = (biz === 'hk4e_cn' || biz.startsWith('cn_'))
     ? 'hk4e-api.mihoyo.com'
     : 'hk4e-api-os.hoyoverse.com';
 
   const qs = new URLSearchParams({
-    authkey_ver: '1',
-    sign_type:   '2',
-    auth_appid:  'webview_gacha',
-    init_type:   gachaType,
-    gacha_type:  gachaType,
-    page:        '1',
-    size:        '20',
-    end_id:      endId || '0',
-    authkey,
-    lang:        lang || 'en',
-    game_biz:    biz,
+    ...baseParams,          // carries authkey, region, authkey_ver, sign_type, etc.
+    gacha_type: gachaType,
+    init_type:  gachaType,
+    page:       '1',
+    size:       '20',
+    end_id:     endId || '0',
   });
 
-  const r = await fetch(`https://${host}/event/gacha_info/api/getGachaLog?${qs}`, {
-    referrer: 'https://gs.hoyoverse.com/',
-    referrerPolicy: 'unsafe-url',
-  });
+  const r = await fetch(`https://${host}/event/gacha_info/api/getGachaLog?${qs}`);
   if (!r.ok) throw new Error(`HTTP ${r.status} from ${host}`);
   return r.json();
 }
 
 // Fetch all pages for a banner type, merging with existing
-async function fetchBannerAll(authkey, banner, existingIds, gameBiz, lang, onProgress) {
+async function fetchBannerAll(baseParams, banner, existingIds, onProgress) {
   const wishes = [];
   let endId = '0';
   let page = 0;
@@ -1668,7 +1659,7 @@ async function fetchBannerAll(authkey, banner, existingIds, gameBiz, lang, onPro
   while (true) {
     page++;
     onProgress(`${banner.name} — page ${page} (${wishes.length} pulled so far)…`);
-    const data = await fetchWishPage(authkey, banner.type, endId, gameBiz, lang);
+    const data = await fetchWishPage(baseParams, banner.type, endId);
 
     if (data.retcode !== 0) {
       if (data.retcode === -101) throw new Error('AuthKey expired. Please get a fresh URL from the game.');
@@ -1724,13 +1715,13 @@ async function syncWishHistory() {
 
   if (!input) { status.textContent = 'Please paste your wish history URL first.'; status.className = 'wish-sync-status error'; status.classList.remove('hidden'); return; }
 
-  let parsed, authkey, gameBiz, lang;
+  let baseParams;
   try {
-    parsed  = new URL(input);
-    authkey = parsed.searchParams.get('authkey');
-    gameBiz = parsed.searchParams.get('game_biz') || 'hk4e_global';
-    lang    = parsed.searchParams.get('lang') || 'en';
-    if (!authkey) throw new Error('No authkey in URL');
+    const parsed = new URL(input);
+    if (!parsed.searchParams.get('authkey')) throw new Error('No authkey in URL');
+    baseParams = Object.fromEntries(parsed.searchParams.entries());
+    baseParams.game_biz = baseParams.game_biz || 'hk4e_global';
+    baseParams.lang     = baseParams.lang     || 'en';
   } catch {
     status.textContent = 'Invalid URL — make sure you copied the full URL from the game.';
     status.className = 'wish-sync-status error'; status.classList.remove('hidden'); return;
@@ -1745,7 +1736,7 @@ async function syncWishHistory() {
     for (const banner of GACHA_BANNERS) {
       const existing  = stored.banners[banner.type] || [];
       const existIds  = new Set(existing.map(w => w.id));
-      const newWishes = await fetchBannerAll(authkey, banner, existIds, gameBiz, lang,
+      const newWishes = await fetchBannerAll(baseParams, banner, existIds,
         msg => { status.textContent = msg; });
 
       // Merge: new wishes go on top (they're newer), sort by ID desc
