@@ -94,8 +94,7 @@ module.exports = async (req, res) => {
         break;
 
       case 'ysLedger':
-        // sg-hk4e-api.hoyolab.com works from Vercel; hk4e-api-os.hoyoverse.com is blocked
-        url = `https://sg-hk4e-api.hoyolab.com/event/ysledger/month_info?month=0&bind_uid=${uid}&bind_region=${server}&lang=en-us`;
+        url = `https://hk4e-api-os.hoyoverse.com/event/ysledger/month_info?month=0&bind_uid=${uid}&bind_region=${server}&lang=en-us`;
         break;
 
       case 'dailyCheckIn':

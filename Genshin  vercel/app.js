@@ -1629,7 +1629,9 @@ function saveStoredWishes(data) {
 }
 
 // Fetch one page of 20 wishes directly from HoYoverse (browser CORS allowed).
-// baseParams = all query params from the URL the user pasted — preserves region, sign_type, etc.
+// baseParams holds the full parsed URL params from the user's pasted URL.
+// We ONLY forward the API-relevant params — the webview URL also contains junk
+// like win_mode, no_joypad_d, plat_type that confuse the backend and cause 504.
 async function fetchWishPage(baseParams, gachaType, endId) {
   const biz  = baseParams.game_biz || 'hk4e_global';
   const host = (biz === 'hk4e_cn' || biz.startsWith('cn_'))
@@ -1637,12 +1639,18 @@ async function fetchWishPage(baseParams, gachaType, endId) {
     : 'hk4e-api-os.hoyoverse.com';
 
   const qs = new URLSearchParams({
-    ...baseParams,          // carries authkey, region, authkey_ver, sign_type, etc.
-    gacha_type: gachaType,
-    init_type:  gachaType,
-    page:       '1',
-    size:       '20',
-    end_id:     endId || '0',
+    authkey_ver: baseParams.authkey_ver || '1',
+    sign_type:   baseParams.sign_type   || '2',
+    auth_appid:  baseParams.auth_appid  || 'webview_gacha',
+    region:      baseParams.region      || '',
+    lang:        baseParams.lang        || 'en',
+    game_biz:    biz,
+    authkey:     baseParams.authkey,
+    gacha_type:  gachaType,
+    init_type:   gachaType,
+    page:        '1',
+    size:        '20',
+    end_id:      endId || '0',
   });
 
   const r = await fetch(`https://${host}/event/gacha_info/api/getGachaLog?${qs}`);
