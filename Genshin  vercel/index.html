@@ -1,0 +1,608 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teyvat Chrono - Genshin Impact Dashboard & Reminders</title>
+  <!-- Google Fonts: Cinzel for headings (Genshin-like serif), Noto Sans for body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Audio Element for notification chime -->
+  <audio id="chime-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-120.wav" preload="auto"></audio>
+
+  <!-- Stars Background layer -->
+  <div class="stars-bg"></div>
+
+  <!-- Header / Navigation Bar -->
+  <header class="app-header">
+    <div class="logo-container">
+      <div class="logo-orb">✦</div>
+      <h1>Teyvat Chrono</h1>
+      <span class="logo-tag">Genshin Dashboard</span>
+    </div>
+
+    <!-- Global Controls -->
+    <div class="header-controls">
+      <!-- Live Server Time -->
+      <div class="server-time-card">
+        <span class="server-label">SERVER TIME</span>
+        <span id="server-time-display">--:--:--</span>
+      </div>
+
+      <!-- Quick Actions -->
+      <button id="refresh-btn" class="icon-btn btn-primary" title="Sync Live Data">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        <span>Refresh</span>
+      </button>
+
+
+
+      <button id="sound-toggle" class="icon-btn btn-secondary" title="Mute/Unmute Alerts">
+        <svg id="sound-icon-on" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        <svg id="sound-icon-off" class="hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+      </button>
+
+      <button id="settings-btn" class="icon-btn btn-gold" title="Settings & Auth">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Credentials</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- App Sub-Bar: Server Indicator & Reset Countdowns -->
+  <div class="sub-bar">
+    <div class="reset-timer-strip">
+      <div class="reset-item">
+        <span class="label">Server Reset:</span>
+        <span id="daily-reset-countdown" class="value text-cyan">--h --m</span>
+      </div>
+      <div class="reset-item">
+        <span class="label">Weekly Reset:</span>
+        <span id="weekly-reset-countdown" class="value text-gold">--d --h</span>
+      </div>
+      <div class="reset-item">
+        <span class="label">Abyss Reset:</span>
+        <span id="abyss-reset-countdown" class="value text-purple">--d --h</span>
+      </div>
+
+      <!-- Live sync status -->
+      <div class="reset-item sync-status-item">
+        <span id="sync-dot" class="sync-dot waiting"></span>
+        <span id="sync-status-label" class="label">No data yet</span>
+      </div>
+      <div class="reset-item">
+        <span class="label">Next sync:</span>
+        <span id="next-sync-countdown" class="value text-cyan">--:--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Banner -->
+  <div id="info-banner" class="info-banner hidden">
+    <span id="banner-text">Welcome! Click Credentials above to connect your HoYoLAB account for auto-sync.</span>
+    <button id="banner-close-btn" class="close-btn">&times;</button>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <nav class="tab-navigation">
+    <button class="tab-link active" data-tab="home">Home Dashboard</button>
+    <button class="tab-link" data-tab="characters">Characters & Maps</button>
+    <button class="tab-link" data-tab="abyss">Spiral Abyss & Ledger</button>
+    <button class="tab-link" data-tab="domains">Domain Schedule</button>
+
+  </nav>
+
+  <!-- Main Body Content Grid -->
+  <main class="main-content">
+
+    <!-- HOME TAB -->
+    <section id="tab-home" class="tab-panel active">
+      <div class="dashboard-grid">
+
+        <!-- Column 1: Account & Daily check-in status -->
+        <div class="column">
+          <!-- Account Badge -->
+          <div id="account-card" class="card glass-card account-card locked">
+            <div class="account-header">
+              <div class="avatar-container">
+                <img id="player-avatar" src="https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png" alt="Avatar">
+              </div>
+              <div class="player-details">
+                <h3 id="player-nickname">Traveler</h3>
+                <span id="player-level" class="badge-ar">AR --</span>
+              </div>
+            </div>
+            <div class="account-stats">
+              <div class="stat-box">
+                <span class="val" id="stat-days">--</span>
+                <span class="lbl">Active Days</span>
+              </div>
+              <div class="stat-box">
+                <span class="val" id="stat-achievements">--</span>
+                <span class="lbl">Achievements</span>
+              </div>
+              <div class="stat-box">
+                <span class="val" id="stat-chests">--</span>
+                <span class="lbl">Chests Opened</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Daily Check-in Card -->
+          <div class="card glass-card checkin-card">
+            <div class="card-header">
+              <span class="card-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L9.2 9.2 2 12l7.2 2.8L12 22l2.8-7.2L22 12l-7.2-2.8z"/></svg></span>
+              <h2>Daily HoYoLAB Check-in</h2>
+            </div>
+            <div class="checkin-body">
+              <div class="checkin-status">
+                <p id="checkin-streak-text">Logged in days this month: <strong class="text-cyan" id="checkin-days">0</strong></p>
+                <div id="checkin-status-badge" class="badge badge-error">Not Claimed Today</div>
+              </div>
+              <div class="checkin-controls">
+                <button id="do-checkin-btn" class="btn btn-primary btn-full">Check-in Now</button>
+                <label class="toggle-container">
+                  <input type="checkbox" id="auto-checkin-toggle">
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Auto Check-in on Load</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Promo Codes Card -->
+          <div class="card glass-card codes-card">
+            <div class="card-header">
+              <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></span>
+              <h2>Active Redemption Codes</h2>
+            </div>
+            <div class="codes-list" id="promo-codes-list">
+              <!-- Dynamically populated -->
+              <p class="empty-text">Fetching active codes...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2: Resin & Realm Currency (Main trackers) -->
+        <div class="column flex-column gap-lg">
+          <!-- Main Resin Tracker -->
+          <div class="card glass-card resin-card">
+            <div class="resin-tracker-wrapper">
+              <div class="radial-progress-container">
+                <svg viewBox="0 0 120 120" class="radial-svg">
+                  <!-- Grey track -->
+                  <circle cx="60" cy="60" r="54" class="track-circle"></circle>
+                  <!-- Purple fill -->
+                  <circle cx="60" cy="60" r="54" class="fill-circle" id="resin-progress-bar"></circle>
+                </svg>
+                <div class="radial-content">
+                  <img src="assets/Item_Condensed_Resin.png" class="resin-icon-large" alt="Resin">
+                  <div class="resin-numeric">
+                    <span id="resin-current-val">--</span>
+                    <span class="slash">/</span>
+                    <span id="resin-max-val">200</span>
+                  </div>
+                  <span id="resin-status-text" class="resin-subtitle">Resin Count</span>
+                </div>
+              </div>
+
+              <div class="resin-times-details">
+                <div class="time-row">
+                  <span class="lbl">1 Resin Point:</span>
+                  <span id="resin-next-time" class="val text-cyan">--m --s</span>
+                </div>
+                <div class="time-row">
+                  <span class="lbl">Reach 160 Resin:</span>
+                  <span id="resin-160-time" class="val text-purple">--h --m</span>
+                </div>
+                <div class="time-row">
+                  <span class="lbl">Full Capacity (200):</span>
+                  <span id="resin-full-time" class="val text-gold">--h --m</span>
+                </div>
+                <div class="time-row highlight-row">
+                  <span class="lbl">Est. Full Clock:</span>
+                  <span id="resin-full-clock" class="val text-green">--:-- --</span>
+                </div>
+
+
+
+                <div class="notification-toggle-wrapper">
+                  <label class="toggle-container">
+                    <input type="checkbox" id="resin-alert-160" checked>
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Alert at 160</span>
+                  </label>
+                  <label class="toggle-container">
+                    <input type="checkbox" id="resin-alert-200" checked>
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Alert at 200</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Realm Currency Tracker -->
+          <div class="card glass-card currency-card">
+            <div class="card-header">
+              <span class="card-icon"><img src="https://gi.yatta.moe/assets/UI/UI_ItemIcon_204.png" alt="Realm Currency" style="width:24px;height:24px"></span>
+              <h2>Realm Currency (Serenitea Pot)</h2>
+            </div>
+            <div class="currency-tracker-wrapper">
+              <div class="bar-progress-container">
+                <div class="progress-info">
+                  <span class="currency-rate" id="currency-rate-text">Rate: --/hr</span>
+                  <span class="currency-numeric">
+                    <span id="currency-current-val">--</span>
+                    <span class="slash">/</span>
+                    <span id="currency-max-val">2400</span>
+                  </span>
+                </div>
+                <div class="horizontal-progress-bar">
+                  <div id="currency-fill-bar" class="fill-bar" style="width: 0%;"></div>
+                </div>
+              </div>
+              
+              <div class="currency-times">
+                <div class="time-item">
+                  <span class="lbl">Remaining to Full:</span>
+                  <span id="currency-time-remaining" class="val text-gold">--h --m</span>
+                </div>
+                <div class="time-item">
+                  <span class="lbl">Est. Full Clock:</span>
+                  <span id="currency-full-clock" class="val text-green">--:-- --</span>
+                </div>
+              </div>
+
+
+
+              <div class="notification-toggle-wrapper">
+                <label class="toggle-container">
+                  <input type="checkbox" id="currency-alert" checked>
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Alert when Full</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 3: Commissions, Weeklies, Expeditions, Transformer -->
+        <div class="column">
+          <!-- Daily & Weekly Status -->
+          <div class="card glass-card tasks-checklist-card">
+            <div class="card-header">
+              <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6 2 2-6 6z"/><path d="M2 2l2 2"/><path d="M7 17l-4 4"/></svg></span>
+              <h2>Daily & Weekly Status</h2>
+            </div>
+            <div class="checklist-section">
+              <h3>Dailies</h3>
+              <div class="status-item">
+                <span class="lbl">Commissions:</span>
+                <span id="commissions-status" class="val text-cyan">-- / 4 Completed</span>
+              </div>
+              <div class="status-item">
+                <span class="lbl">Katheryne Reward:</span>
+                <span id="katheryne-status" class="val text-red">Not Claimed</span>
+              </div>
+            </div>
+
+            <div class="checklist-section border-top">
+              <h3>Weeklies</h3>
+              <div class="status-item">
+                <span class="lbl">Boss Resin Discount:</span>
+                <span id="bosses-status" class="val text-gold">-- Remaining</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Parametric Transformer -->
+          <div class="card glass-card transformer-card">
+            <div class="card-header">
+              <span class="card-icon"><img src="https://gi.yatta.moe/assets/UI/UI_ItemIcon_220021.png" alt="Parametric Transformer" style="width:24px;height:24px"></span>
+              <h2>Parametric Transformer</h2>
+            </div>
+            <div class="transformer-body">
+              <div id="transformer-countdown" class="countdown-large text-gold">Ready!</div>
+              <span class="transformer-sub" id="transformer-date">Available now</span>
+
+            </div>
+          </div>
+
+          <!-- Dispatch Expeditions -->
+          <div class="card glass-card expeditions-card">
+            <div class="card-header">
+              <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></span>
+              <h2>Dispatch Expeditions</h2>
+            </div>
+            <div class="expeditions-list" id="expeditions-list">
+              <!-- Dynamically populated rows -->
+              <p class="empty-text">No active expeditions</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- CHARACTERS TAB -->
+    <section id="tab-characters" class="tab-panel">
+      <div class="characters-grid-layout">
+        <!-- Map Explorations -->
+        <div class="card glass-card col-span-full">
+          <div class="card-header">
+            <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></span>
+            <h2>Teyvat World Exploration</h2>
+          </div>
+          <div class="explorations-grid" id="explorations-grid">
+            <!-- Dynamically populated cards with exploration percentages -->
+            <p class="empty-text text-center">No exploration data. Connect credentials in Settings to sync.</p>
+          </div>
+        </div>
+
+        <!-- Characters catalog -->
+        <div class="card glass-card col-span-full">
+          <div class="card-header">
+            <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            <h2>Owned Characters (<span id="character-total-count">0</span>)</h2>
+          </div>
+          <div class="characters-grid" id="characters-grid">
+            <!-- Dynamically populated cards of characters -->
+            <p class="empty-text text-center">No character data. Connect credentials in Settings to sync.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABYSS & LEDGER TAB -->
+    <section id="tab-abyss" class="tab-panel">
+      <div class="abyss-ledger-grid">
+        <!-- Spiral Abyss Status -->
+        <div class="card glass-card">
+          <div class="card-header">
+            <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6 2 2-6 6z"/><path d="M2 2l2 2"/><path d="M7 17l-4 4"/></svg></span>
+          <h2>Spiral Abyss</h2>
+          </div>
+          <div class="abyss-body" id="abyss-container">
+            <div class="abyss-overview">
+              <div class="abyss-stats">
+                <div class="abyss-stat-item">
+                  <span class="lbl">Max Floor Reached</span>
+                  <span class="val text-gold" id="abyss-floor">--</span>
+                </div>
+                <div class="abyss-stat-item">
+                  <span class="lbl">Total Stars Won</span>
+                  <span class="val text-cyan"><span id="abyss-stars">--</span> / 36</span>
+                </div>
+              </div>
+              <div class="abyss-details" id="abyss-combat-summary">
+                <p class="empty-text">Connect credentials to sync Abyss stats.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Traveler's Ledger (Monthly diary) -->
+        <div class="card glass-card">
+          <div class="card-header">
+            <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
+            <h2>Traveler's Ledger Summary</h2>
+          </div>
+          <div class="ledger-body" id="ledger-container">
+            <div class="ledger-stats">
+              <div class="ledger-earnings">
+                <div class="earnings-box pr-box">
+                  <span class="earnings-icon"><img src="https://gi.yatta.moe/assets/UI/UI_ItemIcon_201.png" alt="Primogem" style="width:28px;height:28px"></span>
+                  <div class="earnings-val">
+                    <span id="ledger-primos">--</span>
+                    <span class="lbl">Primogems Earned</span>
+                  </div>
+                </div>
+                <div class="earnings-box mo-box">
+                  <span class="earnings-icon"><img src="https://gi.yatta.moe/assets/UI/UI_ItemIcon_202.png" alt="Mora" style="width:28px;height:28px"></span>
+                  <div class="earnings-val">
+                    <span id="ledger-mora">--</span>
+                    <span class="lbl">Mora Earned</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Earnings Source Breakdown -->
+              <div class="earnings-breakdown-box">
+                <h3>Primogem Source Breakdown</h3>
+                <div class="progress-bar-list" id="ledger-breakdown-list">
+                  <p class="empty-text">Connect credentials to load Ledger details.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DOMAIN SCHEDULE TAB -->
+    <section id="tab-domains" class="tab-panel">
+      <div class="domains-layout">
+        <!-- Header Info -->
+        <div class="card glass-card col-span-full domains-banner">
+          <div class="domains-header">
+            <h2>Today's Farmable Domain Materials</h2>
+            <div class="day-filters" id="domain-day-filters">
+              <button class="btn btn-sm btn-secondary active" data-day="0">Sunday</button>
+              <button class="btn btn-sm btn-secondary" data-day="1">Monday</button>
+              <button class="btn btn-sm btn-secondary" data-day="2">Tuesday</button>
+              <button class="btn btn-sm btn-secondary" data-day="3">Wednesday</button>
+              <button class="btn btn-sm btn-secondary" data-day="4">Thursday</button>
+              <button class="btn btn-sm btn-secondary" data-day="5">Friday</button>
+              <button class="btn btn-sm btn-secondary" data-day="6">Saturday</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom Owned Characters Alerts -->
+        <div id="domains-alerts-box" class="card glass-card alert-card col-span-full hidden">
+          <div class="card-header">
+            <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
+            <h3 class="text-cyan">Owned Characters Farming Alerts</h3>
+          </div>
+          <div id="domains-alerts-list" class="alerts-list">
+            <!-- Dynamically highlighted alerts based on characters owned -->
+          </div>
+        </div>
+
+        <!-- Domain materials grid -->
+        <div class="domains-container" id="domains-materials-grid">
+          <!-- Dynamically populated grids of talent/weapon materials -->
+        </div>
+      </div>
+    </section>
+
+
+
+  </main>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal" class="modal">
+    <div class="modal-content glass-card">
+      <div class="modal-header">
+        <h2>HoYoLAB Connection Settings</h2>
+        <button id="close-modal-btn" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <form id="credentials-form">
+          <div class="form-row-multi">
+            <div class="form-group flex-1">
+              <label for="uid-input">Genshin UID:</label>
+              <input type="text" id="uid-input" placeholder="e.g. 701234567" required>
+            </div>
+            <div class="form-group flex-1">
+              <label for="server-input">Server Region:</label>
+              <select id="server-input" required>
+                <option value="os_usa">America (os_usa)</option>
+                <option value="os_euro">Europe (os_euro)</option>
+                <option value="os_asia">Asia (os_asia)</option>
+                <option value="os_cht">TW, HK, MO (os_cht)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ltoken-input">ltoken_v2 / ltoken:</label>
+            <input type="text" id="ltoken-input" placeholder="e.g. v2_CAESEB..." required>
+          </div>
+
+          <div class="form-group">
+            <label for="ltuid-input">ltuid_v2 / ltuid:</label>
+            <input type="text" id="ltuid-input" placeholder="e.g. 123456789" required>
+          </div>
+
+          <div class="form-group">
+            <label for="discord-webhook-input">Discord Webhook URL <span style="color:var(--text-muted);font-weight:normal">(optional — for background alerts)</span>:</label>
+            <input type="text" id="discord-webhook-input" placeholder="https://discord.com/api/webhooks/...">
+          </div>
+
+          <!-- Connection actions -->
+          <div class="form-buttons">
+            <button type="button" id="test-conn-btn" class="btn btn-secondary">Test Connection</button>
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+            <button type="button" id="clear-conn-btn" class="btn btn-error">Clear Data</button>
+          </div>
+
+          <!-- Connection Status Indicator -->
+          <div id="conn-status-message" class="conn-status-message hidden">
+            <!-- Success/error status -->
+          </div>
+        </form>
+
+        <!-- Instructions guide -->
+        <div class="alert alert-warning" style="margin-bottom:16px">
+          <strong>👥 Sharing with a friend?</strong> Just send them your deployed URL. Each person enters their own credentials — everything is stored locally in their own browser. No accounts, no server-side data.
+        </div>
+
+        <div class="cookies-instructions">
+          <h3>How to Get Your HoYoLAB Cookies in 30 Seconds</h3>
+          <ol>
+            <li>Go to <a href="https://www.hoyolab.com/" target="_blank" class="text-cyan">hoyolab.com</a> and sign in to your account.</li>
+            <li>Press <kbd>F12</kbd> (or right-click and choose <strong>Inspect</strong>) to open the browser Developer Tools.</li>
+            <li>Go to the <strong>Application</strong> tab (Chrome/Edge) or <strong>Storage</strong> tab (Firefox).</li>
+            <li>In the left sidebar, expand <strong>Cookies</strong> and select <code>https://www.hoyolab.com</code>.</li>
+            <li>Look for <code>ltoken_v2</code> and <code>ltuid_v2</code> in the table. Copy their values and paste them above. (If you only see <code>ltoken</code> and <code>ltuid</code>, copy those instead).</li>
+          </ol>
+          <div class="alert alert-warning">
+            <strong>⚠️ Security Note:</strong> Your credentials are saved <strong>only inside your browser's local storage</strong>. They are sent directly to your Vercel/local API proxy and are never stored on any database. Do not share your cookies with others.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <p>Teyvat Chrono is a fan-made dashboard. All Genshin Impact assets are owned by HoYoverse.</p>
+  </footer>
+
+  <!-- CHARACTER DETAIL OVERLAY -->
+  <div id="char-detail-overlay" class="char-detail-overlay hidden" onclick="if(event.target===this)closeCharDetail()">
+    <div class="char-detail-modal" id="char-detail-modal">
+      <button class="char-detail-close" onclick="closeCharDetail()">&#x2715;</button>
+
+      <!-- Left: portrait -->
+      <div class="char-detail-left" id="char-detail-left">
+        <img id="char-detail-portrait" src="" alt="" class="char-detail-portrait-img">
+        <div class="char-detail-rarity-stars" id="char-detail-stars"></div>
+      </div>
+
+      <!-- Right: info -->
+      <div class="char-detail-right">
+        <div class="char-detail-top-row">
+          <div class="char-detail-el-badge" id="char-detail-el-badge"></div>
+          <div>
+            <h2 class="char-detail-name" id="char-detail-name">—</h2>
+            <div class="char-detail-element-label" id="char-detail-el-label"></div>
+          </div>
+        </div>
+
+        <div class="char-detail-stats-row">
+          <div class="char-stat-pill">
+            <span class="char-stat-label">Level</span>
+            <span class="char-stat-val" id="char-detail-level">—</span>
+          </div>
+          <div class="char-stat-pill">
+            <span class="char-stat-label">Constellation</span>
+            <span class="char-stat-val" id="char-detail-const">—</span>
+          </div>
+          <div class="char-stat-pill">
+            <span class="char-stat-label">Friendship</span>
+            <span class="char-stat-val" id="char-detail-fetter">—</span>
+          </div>
+        </div>
+
+        <!-- Weapon -->
+        <div class="char-detail-section" id="char-detail-weapon-section">
+          <h3 class="char-detail-section-title">Weapon</h3>
+          <div class="char-detail-weapon-row" id="char-detail-weapon-row"></div>
+        </div>
+
+        <!-- Artifacts -->
+        <div class="char-detail-section" id="char-detail-artifacts-section">
+          <h3 class="char-detail-section-title">Artifacts</h3>
+          <div class="char-detail-artifact-slots" id="char-detail-artifact-slots"></div>
+          <div class="char-detail-set-bonuses" id="char-detail-set-bonuses"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
+
+
+

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Nunito+Sans:opsz,wght@6..12,300;6..12,400;6..12,600;6..12,700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0a0d1c;font-family:'Nunito Sans',sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:#d3bc8e;text-decoration:none}
+  a:hover{color:#ece5d8}
+  @keyframes twinkle{0%,100%{opacity:0.35}50%{opacity:0.9}}
+  @keyframes floatMote{0%{transform:translateY(0)}50%{transform:translateY(-14px)}100%{transform:translateY(0)}}
+  @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  @keyframes pulseGlow{0%,100%{box-shadow:0 0 14px rgba(79,214,224,0.5)}50%{box-shadow:0 0 26px rgba(79,214,224,0.85)}}
+</style>
+</helmet>
+<div style="position:relative;min-height:100vh;width:100%;background:radial-gradient(ellipse 120% 80% at 50% -10%,#2b3358 0%,#191d38 42%,#0c0f22 78%,#080a18 100%);overflow:hidden;font-family:'Nunito Sans',sans-serif">
+
+  <div style="position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(1.4px 1.4px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 28% 42%,#cfe0ff,transparent),radial-gradient(1.6px 1.6px at 46% 12%,#fff,transparent),radial-gradient(1px 1px at 63% 30%,#e6d9ff,transparent),radial-gradient(1.2px 1.2px at 78% 16%,#fff,transparent),radial-gradient(1px 1px at 88% 44%,#cfe0ff,transparent),radial-gradient(1.3px 1.3px at 8% 62%,#fff,transparent),radial-gradient(1px 1px at 34% 74%,#e6d9ff,transparent),radial-gradient(1.5px 1.5px at 55% 66%,#fff,transparent),radial-gradient(1px 1px at 72% 82%,#cfe0ff,transparent),radial-gradient(1.2px 1.2px at 92% 70%,#fff,transparent),radial-gradient(1px 1px at 20% 90%,#fff,transparent);background-repeat:no-repeat;animation:twinkle 6s ease-in-out infinite"></div>
+  <div style="position:absolute;top:-160px;right:-120px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(122,150,255,0.16),transparent 65%);pointer-events:none"></div>
+  <div style="position:absolute;bottom:-200px;left:-140px;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(211,188,142,0.10),transparent 68%);pointer-events:none"></div>
+
+  <div style="position:relative;max-width:1440px;margin:0 auto;padding:26px 34px 60px">
+
+    <!-- HEADER -->
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding-bottom:20px">
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="position:relative;width:52px;height:52px;flex:none;display:flex;align-items:center;justify-content:center">
+          <svg width="52" height="52" viewBox="0 0 52 52"><polygon points="26,2 32,20 50,26 32,32 26,50 20,32 2,26 20,20" fill="none" stroke="#d3bc8e" stroke-width="1.4"/><polygon points="26,11 30,22 41,26 30,30 26,41 22,30 11,26 22,22" fill="rgba(211,188,142,0.22)" stroke="#ece5d8" stroke-width="1"/><circle cx="26" cy="26" r="3.2" fill="#ece5d8"/></svg>
+        </div>
+        <div>
+          <div style="font-family:'Cinzel',serif;font-weight:700;font-size:25px;letter-spacing:3px;color:#ece5d8;line-height:1;text-shadow:0 2px 12px rgba(211,188,142,0.35)">TEYVAT CHRONO</div>
+          <div style="font-size:12px;letter-spacing:4px;color:#9aa0be;text-transform:uppercase;margin-top:5px">Traveler's Companion</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:18px">
+        <div style="text-align:right">
+          <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;font-size:12px;letter-spacing:2px;color:#9aa0be;text-transform:uppercase">
+            <span style="width:7px;height:7px;border-radius:50%;background:#5fd3b0;box-shadow:0 0 8px #5fd3b0"></span>Asia Server
+          </div>
+          <div style="font-family:'Cinzel',serif;font-weight:600;font-size:27px;color:#ece5d8;letter-spacing:2px;margin-top:2px;font-variant-numeric:tabular-nums">{{ clock }}</div>
+          <div style="font-size:11px;letter-spacing:2px;color:#8890ac;margin-top:1px">{{ dateStr }}</div>
+        </div>
+        <div style="width:1px;height:46px;background:linear-gradient(180deg,transparent,rgba(211,188,142,0.5),transparent)"></div>
+        <div style="display:flex;align-items:center;gap:11px">
+          <div style="position:relative;width:50px;height:50px;border-radius:50%;background:linear-gradient(150deg,#4a5273,#2a3050);border:1.5px solid #d3bc8e;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:18px;color:#ece5d8;box-shadow:0 0 14px rgba(211,188,142,0.3)">L</div>
+          <div>
+            <div style="font-family:'Cinzel',serif;font-size:14px;color:#ece5d8;letter-spacing:1px">Lumine</div>
+            <div style="display:inline-block;margin-top:3px;padding:1px 9px;background:rgba(211,188,142,0.14);border:1px solid rgba(211,188,142,0.4);border-radius:10px;font-size:11px;letter-spacing:1px;color:#d3bc8e">AR 58</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NAV -->
+    <div style="display:flex;align-items:center;gap:4px;border-top:1px solid rgba(211,188,142,0.2);border-bottom:1px solid rgba(211,188,142,0.2);padding:2px 0;margin-bottom:26px">
+      <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="6">
+        <div onClick="{{ tab.onClick }}" style="position:relative;padding:13px 26px;cursor:pointer;font-family:'Cinzel',serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;color:{{ tab.color }};transition:color 0.2s">
+          {{ tab.name }}
+          <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);width:{{ tab.underline }};height:2px;background:linear-gradient(90deg,transparent,#d3bc8e,transparent);transition:width 0.25s"></div>
+        </div>
+      </sc-for>
+      <div style="flex:1"></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 18px;border:1px solid rgba(211,188,142,0.35);border-radius:4px;cursor:pointer;background:rgba(211,188,142,0.06)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d3bc8e" stroke-width="1.8"><path d="M12 3v18M3 12h18"/></svg>
+        <span style="font-size:12px;letter-spacing:1.5px;color:#d3bc8e;text-transform:uppercase">Add Account</span>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:18px;align-items:start">
+
+      <!-- RESIN -->
+      <div style="grid-column:span 5">
+      <dc-import name="GenshinPanel" title="Original Resin" accent="#4fd6e0" badge="LIVE" hint-size="100%,270px">
+        <div style="display:flex;align-items:center;gap:20px">
+          <div style="position:relative;flex:none;animation:floatMote 5s ease-in-out infinite">
+            <svg width="82" height="96" viewBox="0 0 82 96"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8ef0f6"/><stop offset="0.5" stop-color="#3fbfe0"/><stop offset="1" stop-color="#1d6fb0"/></linearGradient></defs><polygon points="41,4 76,40 41,92 6,40" fill="url(#rg)" stroke="#bff3ff" stroke-width="1.5"/><polygon points="41,4 41,92 6,40" fill="rgba(255,255,255,0.14)"/><polygon points="41,20 60,42 41,58 22,42" fill="rgba(255,255,255,0.28)"/><line x1="41" y1="4" x2="41" y2="92" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/></svg>
+          </div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:baseline;gap:4px">
+              <span style="font-family:'Cinzel',serif;font-weight:700;font-size:54px;color:#ece5d8;line-height:1;text-shadow:0 0 20px rgba(79,214,224,0.4)">128</span>
+              <span style="font-family:'Cinzel',serif;font-size:26px;color:#8890ac">/ 160</span>
+            </div>
+            <div style="margin-top:12px;height:9px;border-radius:5px;background:rgba(10,14,30,0.6);border:1px solid rgba(211,188,142,0.25);overflow:hidden">
+              <div style="width:80%;height:100%;border-radius:4px;background:linear-gradient(90deg,#1d6fb0,#4fd6e0,#8ef0f6);background-size:200% 100%;animation:shimmer 3s linear infinite"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:11px;font-size:13px;color:#b3b9d4">
+              <span>Next <span style="color:#8ef0f6">+1</span> in <span style="font-variant-numeric:tabular-nums;color:#ece5d8">03:12</span></span>
+              <span>Full in <span style="color:#ece5d8">4h 16m</span></span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(211,188,142,0.16)">
+          <div style="flex:1;text-align:center;padding:8px 4px;background:rgba(10,14,30,0.35);border:1px solid rgba(211,188,142,0.14);border-radius:4px"><div style="font-family:'Cinzel',serif;font-size:16px;color:#ece5d8">20</div><div style="font-size:10px;letter-spacing:1px;color:#8890ac;text-transform:uppercase;margin-top:2px">Ley Line</div></div>
+          <div style="flex:1;text-align:center;padding:8px 4px;background:rgba(10,14,30,0.35);border:1px solid rgba(211,188,142,0.14);border-radius:4px"><div style="font-family:'Cinzel',serif;font-size:16px;color:#ece5d8">20</div><div style="font-size:10px;letter-spacing:1px;color:#8890ac;text-transform:uppercase;margin-top:2px">Domain</div></div>
+          <div style="flex:1;text-align:center;padding:8px 4px;background:rgba(10,14,30,0.35);border:1px solid rgba(211,188,142,0.14);border-radius:4px"><div style="font-family:'Cinzel',serif;font-size:16px;color:#ece5d8">40</div><div style="font-size:10px;letter-spacing:1px;color:#8890ac;text-transform:uppercase;margin-top:2px">Boss</div></div>
+          <div style="flex:1;text-align:center;padding:8px 4px;background:rgba(10,14,30,0.35);border:1px solid rgba(211,188,142,0.14);border-radius:4px"><div style="font-family:'Cinzel',serif;font-size:16px;color:#ece5d8">60</div><div style="font-size:10px;letter-spacing:1px;color:#8890ac;text-transform:uppercase;margin-top:2px">Weekly</div></div>
+        </div>
+      </dc-import>
+      </div>
+
+      <!-- REALM CURRENCY -->
+      <div style="grid-column:span 4">
+      <dc-import name="GenshinPanel" title="Realm Currency" accent="#7ce0e6" hint-size="100%,270px">
+        <div style="display:flex;align-items:center;gap:16px">
+          <div style="flex:none">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none"><path d="M32 6 L54 20 V44 L32 58 L10 44 V20 Z" fill="rgba(124,224,230,0.14)" stroke="#7ce0e6" stroke-width="1.6"/><path d="M22 40 V30 L32 22 L42 30 V40 Z" fill="rgba(124,224,230,0.25)" stroke="#bff3ff" stroke-width="1.2"/><rect x="29" y="34" width="6" height="6" fill="#bff3ff"/><path d="M20 30 L32 21 L44 30" stroke="#bff3ff" stroke-width="1.2"/></svg>
+          </div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:baseline;gap:4px">
+              <span style="font-family:'Cinzel',serif;font-weight:700;font-size:38px;color:#ece5d8;line-height:1">1,840</span>
+              <span style="font-family:'Cinzel',serif;font-size:19px;color:#8890ac">/ 2,400</span>
+            </div>
+            <div style="margin-top:10px;height:8px;border-radius:5px;background:rgba(10,14,30,0.6);border:1px solid rgba(211,188,142,0.25);overflow:hidden"><div style="width:76%;height:100%;background:linear-gradient(90deg,#3a9aa0,#7ce0e6)"></div></div>
+          </div>
+        </div>
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:9px;font-size:13px">
+          <div style="display:flex;justify-content:space-between;color:#b3b9d4"><span>Adeptal Rate</span><span style="color:#ece5d8">30 / hr <span style="color:#8890ac">· Trust 10</span></span></div>
+          <div style="display:flex;justify-content:space-between;color:#b3b9d4"><span>Reaches cap in</span><span style="color:#ece5d8">18h 40m</span></div>
+        </div>
+      </dc-import>
+      </div>
+
+      <!-- CHECK-IN (tall) -->
+      <div style="grid-column:span 3;grid-row:span 2">
+      <dc-import name="GenshinPanel" title="Daily Check-In" accent="#f0b90b" badge="DAY 14" hint-size="100%,558px">
+        <div style="text-align:center;font-size:12px;letter-spacing:2px;color:#8890ac;text-transform:uppercase">HoYoLAB · June</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:14px">
+          <sc-for list="{{ checkin }}" as="d" hint-placeholder-count="16">
+            <div style="position:relative;aspect-ratio:1;border-radius:5px;border:1px solid {{ d.border }};background:{{ d.bg }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+              <div style="font-size:9px;color:{{ d.dayColor }}">{{ d.label }}</div>
+              <div style="width:16px;height:16px">{{ d.icon }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin-top:16px;padding:14px;border:1px solid rgba(240,185,11,0.4);border-radius:6px;background:rgba(240,185,11,0.08);text-align:center">
+          <div style="font-size:11px;letter-spacing:2px;color:#f0b90b;text-transform:uppercase">Today's Reward</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px">
+            <svg width="26" height="26" viewBox="0 0 24 24"><polygon points="12,2 15,9 22,12 15,15 12,22 9,15 2,12 9,9" fill="#ffe89a" stroke="#f0b90b" stroke-width="0.8"/></svg>
+            <span style="font-family:'Cinzel',serif;font-size:22px;color:#ece5d8">×60</span>
+          </div>
+          <div style="font-size:12px;color:#b3b9d4;margin-top:3px">Primogems</div>
+        </div>
+        <div style="margin-top:12px;padding:11px;border-radius:6px;background:linear-gradient(90deg,#c9a24b,#e8c877);text-align:center;font-family:'Cinzel',serif;font-size:14px;letter-spacing:2px;color:#2a2416;cursor:pointer;box-shadow:0 4px 14px rgba(211,188,142,0.3)">CLAIM REWARD</div>
+        <div style="margin-top:12px;text-align:center;font-size:12px;color:#8890ac">13-day streak · 6 rewards this month remaining</div>
+      </dc-import>
+      </div>
+
+      <!-- DAILIES & WEEKLIES -->
+      <div style="grid-column:span 5">
+      <dc-import name="GenshinPanel" title="Commissions & Trounces" accent="#ff6640" hint-size="100%,270px">
+        <div style="display:flex;gap:14px">
+          <div style="flex:1;padding:14px;border:1px solid rgba(211,188,142,0.16);border-radius:6px;background:rgba(10,14,30,0.3)">
+            <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;letter-spacing:1px;color:#9aa0be;text-transform:uppercase">Daily Commissions</span><span style="font-family:'Cinzel',serif;font-size:15px;color:#5fd3b0">4 / 4</span></div>
+            <div style="display:flex;gap:6px;margin-top:12px">
+              <div style="flex:1;height:6px;border-radius:3px;background:#5fd3b0"></div><div style="flex:1;height:6px;border-radius:3px;background:#5fd3b0"></div><div style="flex:1;height:6px;border-radius:3px;background:#5fd3b0"></div><div style="flex:1;height:6px;border-radius:3px;background:#5fd3b0"></div>
+            </div>
+            <div style="margin-top:11px;font-size:12px;color:#b3b9d4">Bonus reward <span style="color:#5fd3b0">claimed</span> · +20 Primogems</div>
+          </div>
+          <div style="flex:1;padding:14px;border:1px solid rgba(211,188,142,0.16);border-radius:6px;background:rgba(10,14,30,0.3)">
+            <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;letter-spacing:1px;color:#9aa0be;text-transform:uppercase">Resin Discount</span><span style="font-family:'Cinzel',serif;font-size:15px;color:#ffb14a">2 / 3</span></div>
+            <div style="display:flex;gap:6px;margin-top:12px">
+              <div style="flex:1;height:6px;border-radius:3px;background:#ffb14a"></div><div style="flex:1;height:6px;border-radius:3px;background:#ffb14a"></div><div style="flex:1;height:6px;border-radius:3px;background:rgba(255,177,74,0.2)"></div>
+            </div>
+            <div style="margin-top:11px;font-size:12px;color:#b3b9d4">Weekly boss half-price runs left</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#c5cae0"><span style="width:6px;height:6px;background:#ff6640;transform:rotate(45deg)"></span>Stormterror's Lair — Andrius <span style="margin-left:auto;color:#8890ac">available</span></div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#c5cae0"><span style="width:6px;height:6px;background:#b25dcd;transform:rotate(45deg)"></span>Enter the Golden House — Childe <span style="margin-left:auto;color:#8890ac">available</span></div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#c5cae0"><span style="width:6px;height:6px;background:#5fd3b0;transform:rotate(45deg)"></span>Narukami Island — La Signora <span style="margin-left:auto;color:#5fd3b0">1 discount used</span></div>
+        </div>
+      </dc-import>
+      </div>
+
+      <!-- PARAMETRIC + DISPATCH -->
+      <div style="grid-column:span 4">
+      <dc-import name="GenshinPanel" title="Transformer & Dispatch" accent="#9cd82a" hint-size="100%,270px">
+        <div style="display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid rgba(156,216,42,0.4);border-radius:6px;background:rgba(156,216,42,0.08)">
+          <svg width="30" height="30" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="#9cd82a" stroke-width="1.5"/><circle cx="16" cy="16" r="5" fill="rgba(156,216,42,0.3)" stroke="#c4f06a" stroke-width="1"/><path d="M16 4v6M16 22v6M4 16h6M22 16h6" stroke="#9cd82a" stroke-width="1.5"/></svg>
+          <div style="flex:1"><div style="font-family:'Cinzel',serif;font-size:14px;color:#ece5d8">Parametric Transformer</div><div style="font-size:12px;color:#9aa0be;margin-top:1px">Cooldown complete</div></div>
+          <div style="padding:5px 12px;border-radius:4px;background:rgba(156,216,42,0.2);border:1px solid #9cd82a;font-size:11px;letter-spacing:1px;color:#c4f06a">READY</div>
+        </div>
+        <div style="margin-top:13px;font-size:12px;letter-spacing:1px;color:#9aa0be;text-transform:uppercase">Expeditions · 4 / 5</div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ dispatch }}" as="e" hint-placeholder-count="5">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(150deg,#454d70,#2a3050);border:1.5px solid {{ e.color }};display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:12px;color:#ece5d8;flex:none">{{ e.initial }}</div>
+              <span style="font-size:13px;color:#c5cae0;flex:1">{{ e.name }}</span>
+              <span style="font-size:12px;color:{{ e.timeColor }};font-variant-numeric:tabular-nums">{{ e.time }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </dc-import>
+      </div>
+
+      <!-- SPIRAL ABYSS -->
+      <div style="grid-column:span 4">
+      <dc-import name="GenshinPanel" title="Spiral Abyss" accent="#b25dcd" hint-size="100%,240px">
+        <div style="display:flex;align-items:center;gap:16px">
+          <div style="text-align:center;flex:none">
+            <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:2px;color:#c86bdb">FLOOR</div>
+            <div style="font-family:'Cinzel',serif;font-weight:700;font-size:46px;color:#ece5d8;line-height:1">12</div>
+            <div style="font-size:12px;color:#8890ac">Chamber 3</div>
+          </div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:6px">
+              <svg width="22" height="22" viewBox="0 0 24 24"><polygon points="12,2 15,9 22,9 16,14 18,22 12,17 6,22 8,14 2,9 9,9" fill="#ffe89a" stroke="#f0b90b" stroke-width="0.6"/></svg>
+              <span style="font-family:'Cinzel',serif;font-size:30px;color:#ece5d8">36</span>
+              <span style="font-family:'Cinzel',serif;font-size:18px;color:#8890ac">/ 36</span>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:5px">
+              <div style="flex:1;height:7px;border-radius:4px;background:linear-gradient(90deg,#8a3fb0,#c86bdb)"></div><div style="flex:1;height:7px;border-radius:4px;background:linear-gradient(90deg,#8a3fb0,#c86bdb)"></div><div style="flex:1;height:7px;border-radius:4px;background:linear-gradient(90deg,#8a3fb0,#c86bdb)"></div>
+            </div>
+            <div style="margin-top:11px;font-size:12px;color:#b3b9d4">Full clear — <span style="color:#c86bdb">9 stars</span> this half</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(211,188,142,0.16);display:flex;justify-content:space-between;font-size:13px;color:#b3b9d4"><span>Cycle resets in</span><span style="color:#ece5d8">8d 14h</span></div>
+      </dc-import>
+      </div>
+
+      <!-- LEDGER -->
+      <div style="grid-column:span 4">
+      <dc-import name="GenshinPanel" title="Traveler's Diary" accent="#f0b90b" hint-size="100%,240px">
+        <div style="display:flex;gap:14px">
+          <div style="flex:1;padding:12px;border:1px solid rgba(211,188,142,0.16);border-radius:6px;background:rgba(10,14,30,0.3);text-align:center">
+            <svg width="24" height="24" viewBox="0 0 24 24" style="margin-bottom:4px"><polygon points="12,2 15,9 22,12 15,15 12,22 9,15 2,12 9,9" fill="#ffe89a" stroke="#f0b90b" stroke-width="0.8"/></svg>
+            <div style="font-family:'Cinzel',serif;font-size:22px;color:#ece5d8">8,240</div>
+            <div style="font-size:11px;letter-spacing:1px;color:#8890ac;text-transform:uppercase;margin-top:2px">Primogems</div>
+          </div>
+          <div style="flex:1;padding:12px;border:1px solid rgba(211,188,142,0.16);border-radius:6px;background:rgba(10,14,30,0.3);text-align:center">
+            <svg width="24" height="24" viewBox="0 0 24 24" style="margin-bottom:4px"><circle cx="12" cy="12" r="10" fill="#f5d98a" stroke="#c9a24b" stroke-width="1"/><circle cx="12" cy="12" r="6" fill="none" stroke="#c9a24b" stroke-width="1"/></svg>
+            <div style="font-family:'Cinzel',serif;font-size:22px;color:#ece5d8">2.14M</div>
+            <div style="font-size:11px;letter-spacing:1px;color:#8890ac;text-transform:uppercase;margin-top:2px">Mora</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;font-size:12px;letter-spacing:1px;color:#9aa0be;text-transform:uppercase">This Month vs Last</div>
+        <div style="margin-top:9px;height:9px;border-radius:5px;background:rgba(10,14,30,0.6);overflow:hidden;display:flex">
+          <div style="width:64%;background:linear-gradient(90deg,#c9a24b,#f0b90b)"></div>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:#b3b9d4"><span style="color:#9cd82a">▲ 18%</span> over May · Daily avg 274</div>
+      </dc-import>
+      </div>
+
+      <!-- CODES -->
+      <div style="grid-column:span 4">
+      <dc-import name="GenshinPanel" title="Redemption Codes" accent="#5fd3b0" badge="3 NEW" hint-size="100%,240px">
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ codes }}" as="c" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid rgba(211,188,142,0.18);border-radius:5px;background:rgba(10,14,30,0.3)">
+              <div style="flex:1"><div style="font-family:'Cinzel',serif;font-size:14px;letter-spacing:1.5px;color:#ece5d8">{{ c.code }}</div><div style="font-size:11px;color:#8890ac;margin-top:1px">{{ c.reward }}</div></div>
+              <div style="padding:5px 12px;border-radius:4px;background:rgba(95,211,176,0.14);border:1px solid rgba(95,211,176,0.5);font-size:11px;letter-spacing:1px;color:#5fd3b0;cursor:pointer">COPY</div>
+            </div>
+          </sc-for>
+        </div>
+      </dc-import>
+      </div>
+
+      <!-- DOMAIN SCHEDULE (full width) -->
+      <div style="grid-column:span 12">
+      <dc-import name="GenshinPanel" title="Domain Schedule" accent="#d3bc8e" badge="{{ dayBadge }}" hint-size="100%,300px">
+        <div style="display:flex;gap:6px;margin-bottom:18px">
+          <sc-for list="{{ dayTabs }}" as="d" hint-placeholder-count="7">
+            <div onClick="{{ d.onClick }}" style="flex:1;text-align:center;padding:9px 0;border-radius:5px;cursor:pointer;font-family:'Cinzel',serif;font-size:13px;letter-spacing:1px;border:1px solid {{ d.border }};background:{{ d.bg }};color:{{ d.color }}">{{ d.name }}</div>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:2px;color:#9aa0be;text-transform:uppercase;margin-bottom:12px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d3bc8e" stroke-width="1.6"><path d="M4 5h16v14H4z"/><path d="M4 9h16"/></svg>Talent Books</div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <sc-for list="{{ talent }}" as="t" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid rgba(211,188,142,0.16);border-radius:6px;background:rgba(10,14,30,0.3)">
+                  <div style="width:34px;height:34px;border-radius:5px;background:{{ t.tint }};border:1px solid {{ t.color }};display:flex;align-items:center;justify-content:center;flex:none"><div style="width:12px;height:12px;background:{{ t.color }};transform:rotate(45deg)"></div></div>
+                  <div style="flex:1"><div style="font-family:'Cinzel',serif;font-size:14px;color:#ece5d8">{{ t.name }}</div><div style="font-size:11px;color:#8890ac">{{ t.region }}</div></div>
+                  <div style="font-size:12px;color:#c5cae0;text-align:right">{{ t.chars }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:2px;color:#9aa0be;text-transform:uppercase;margin-bottom:12px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d3bc8e" stroke-width="1.6"><path d="M14 4l6 6-9 9-6-6z"/><path d="M4 20l3-1"/></svg>Weapon Materials</div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <sc-for list="{{ weapon }}" as="w" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid rgba(211,188,142,0.16);border-radius:6px;background:rgba(10,14,30,0.3)">
+                  <div style="width:34px;height:34px;border-radius:5px;background:{{ w.tint }};border:1px solid {{ w.color }};display:flex;align-items:center;justify-content:center;flex:none"><div style="width:12px;height:12px;background:{{ w.color }};transform:rotate(45deg)"></div></div>
+                  <div style="flex:1"><div style="font-family:'Cinzel',serif;font-size:14px;color:#ece5d8">{{ w.name }}</div><div style="font-size:11px;color:#8890ac">{{ w.region }}</div></div>
+                  <div style="font-size:12px;color:#c5cae0;text-align:right">{{ w.chars }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </dc-import>
+      </div>
+
+    </div>
+
+    <div style="text-align:center;margin-top:34px;font-size:11px;letter-spacing:2px;color:#5a6180">TEYVAT CHRONO · A FAN-MADE COMPANION · NOT AFFILIATED WITH HOYOVERSE</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { tab: 'Overview', day: null, now: new Date() };
+
+  componentDidMount() {
+    this._t = setInterval(() => this.setState({ now: new Date() }), 1000);
+  }
+  componentWillUnmount() { clearInterval(this._t); }
+
+  todayIndex() {
+    const js = new Date().getDay(); // 0=Sun
+    return js === 0 ? 6 : js - 1;   // Mon=0..Sun=6
+  }
+
+  checkIcon(state) {
+    if (state === 'claimed') return React.createElement('svg', { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: '#5fd3b0', strokeWidth: 2.4 }, React.createElement('path', { d: 'M4 12l5 5L20 6' }));
+    if (state === 'today') return React.createElement('svg', { width: 16, height: 16, viewBox: '0 0 24 24' }, React.createElement('polygon', { points: '12,2 15,9 22,12 15,15 12,22 9,15 2,12 9,9', fill: '#ffe89a', stroke: '#f0b90b', strokeWidth: 0.8 }));
+    return React.createElement('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: '#5a6180', strokeWidth: 2 }, React.createElement('circle', { cx: 12, cy: 12, r: 8 }));
+  }
+
+  renderVals() {
+    const now = this.state.now;
+    const pad = n => String(n).padStart(2, '0');
+    const clock = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
+    const tabNames = ['Overview', 'Dailies', 'Spiral Abyss', 'Domains', 'Codes', 'Wishes'];
+    const tabs = tabNames.map(name => {
+      const active = this.state.tab === name;
+      return { name, color: active ? '#ece5d8' : '#8890ac', underline: active ? '70%' : '0%', onClick: () => this.setState({ tab: name }) };
+    });
+
+    // Check-in: 16 cells
+    const checkin = [];
+    for (let i = 1; i <= 16; i++) {
+      let st = i < 14 ? 'claimed' : (i === 14 ? 'today' : 'locked');
+      checkin.push({
+        label: 'D' + i,
+        dayColor: st === 'today' ? '#f0b90b' : (st === 'claimed' ? '#6f7899' : '#4a5170'),
+        border: st === 'today' ? '#f0b90b' : (st === 'claimed' ? 'rgba(95,211,176,0.35)' : 'rgba(211,188,142,0.12)'),
+        bg: st === 'today' ? 'rgba(240,185,11,0.14)' : (st === 'claimed' ? 'rgba(95,211,176,0.07)' : 'rgba(10,14,30,0.3)'),
+        icon: this.checkIcon(st),
+      });
+    }
+
+    const dispatch = [
+      { initial: 'K', name: 'Kaeya · Ore', color: '#7ce0e6', time: 'Done', timeColor: '#5fd3b0' },
+      { initial: 'A', name: 'Amber · Mora', color: '#ff6640', time: '02:14', timeColor: '#b3b9d4' },
+      { initial: 'L', name: 'Lisa · Books', color: '#c86bdb', time: '05:48', timeColor: '#b3b9d4' },
+      { initial: 'B', name: 'Bennett · Ore', color: '#ff6640', time: '11:02', timeColor: '#b3b9d4' },
+      { initial: 'F', name: 'Fischl · Mora', color: '#c86bdb', time: 'Done', timeColor: '#5fd3b0' },
+    ];
+
+    const codes = [
+      { code: 'GENSHINGIFT', reward: '50 Primogems · 3 Hero\u2019s Wit' },
+      { code: 'STARRAIL0619', reward: '60 Primogems · 10k Mora' },
+      { code: 'TEYVAT4EVER', reward: '100 Primogems' },
+    ];
+
+    // Domain data by weekday group
+    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const active = this.state.day == null ? this.todayIndex() : this.state.day;
+
+    const groupOf = i => (i === 6 ? 'sun' : (i % 3 === 0 ? 'A' : (i % 3 === 1 ? 'B' : 'C')));
+    const grp = groupOf(active);
+
+    const talentSets = {
+      A: [
+        { name: 'Freedom', region: 'Mondstadt', chars: 'Jean · Venti', color: '#5fd3b0', tint: 'rgba(95,211,176,0.14)' },
+        { name: 'Prosperity', region: 'Liyue', chars: 'Keqing · Ningguang', color: '#f0b90b', tint: 'rgba(240,185,11,0.14)' },
+        { name: 'Transience', region: 'Inazuma', chars: 'Ayaka · Kokomi', color: '#7ce0e6', tint: 'rgba(124,224,230,0.14)' },
+      ],
+      B: [
+        { name: 'Resistance', region: 'Mondstadt', chars: 'Diluc · Klee', color: '#ff6640', tint: 'rgba(255,102,64,0.14)' },
+        { name: 'Diligence', region: 'Liyue', chars: 'Hu Tao · Xiao', color: '#ff6640', tint: 'rgba(255,102,64,0.14)' },
+        { name: 'Elegance', region: 'Inazuma', chars: 'Ayato · Itto', color: '#f0b90b', tint: 'rgba(240,185,11,0.14)' },
+      ],
+      C: [
+        { name: 'Ballad', region: 'Mondstadt', chars: 'Mona · Sucrose', color: '#7ce0e6', tint: 'rgba(124,224,230,0.14)' },
+        { name: 'Gold', region: 'Liyue', chars: 'Zhongli · Ganyu', color: '#f0b90b', tint: 'rgba(240,185,11,0.14)' },
+        { name: 'Light', region: 'Inazuma', chars: 'Raiden · Yae', color: '#c86bdb', tint: 'rgba(200,107,219,0.14)' },
+      ],
+      sun: [
+        { name: 'All Talent Books', region: 'Every domain open', chars: 'Farm freely', color: '#d3bc8e', tint: 'rgba(211,188,142,0.14)' },
+      ],
+    };
+    const weaponSets = {
+      A: [
+        { name: 'Decarabian', region: 'Mondstadt', chars: 'Aquila · Skyward', color: '#7ce0e6', tint: 'rgba(124,224,230,0.14)' },
+        { name: 'Guyun', region: 'Liyue', chars: 'Primordial Jade', color: '#f0b90b', tint: 'rgba(240,185,11,0.14)' },
+        { name: 'Distant Sea', region: 'Inazuma', chars: 'Mistsplitter', color: '#c86bdb', tint: 'rgba(200,107,219,0.14)' },
+      ],
+      B: [
+        { name: 'Boreal Wolf', region: 'Mondstadt', chars: 'Wolf\u2019s Gravestone', color: '#5fd3b0', tint: 'rgba(95,211,176,0.14)' },
+        { name: 'Mist Veiled', region: 'Liyue', chars: 'Staff of Homa', color: '#ff6640', tint: 'rgba(255,102,64,0.14)' },
+        { name: 'Narukami', region: 'Inazuma', chars: 'Thundering Pulse', color: '#c86bdb', tint: 'rgba(200,107,219,0.14)' },
+      ],
+      C: [
+        { name: 'Gladiator', region: 'Mondstadt', chars: 'Skyward Harp', color: '#f0b90b', tint: 'rgba(240,185,11,0.14)' },
+        { name: 'Aerosiderite', region: 'Liyue', chars: 'Vortex Vanquisher', color: '#f0b90b', tint: 'rgba(240,185,11,0.14)' },
+        { name: 'Coral', region: 'Inazuma', chars: 'Kagura\u2019s Verity', color: '#7ce0e6', tint: 'rgba(124,224,230,0.14)' },
+      ],
+      sun: [
+        { name: 'All Weapon Materials', region: 'Every domain open', chars: 'Farm freely', color: '#d3bc8e', tint: 'rgba(211,188,142,0.14)' },
+      ],
+    };
+
+    const dayTabs = dayNames.map((name, i) => {
+      const on = i === active;
+      const today = i === this.todayIndex();
+      return {
+        name, onClick: () => this.setState({ day: i }),
+        border: on ? '#d3bc8e' : (today ? 'rgba(211,188,142,0.5)' : 'rgba(211,188,142,0.16)'),
+        bg: on ? 'linear-gradient(180deg,rgba(211,188,142,0.28),rgba(211,188,142,0.12))' : 'rgba(10,14,30,0.3)',
+        color: on ? '#ece5d8' : (today ? '#d3bc8e' : '#8890ac'),
+      };
+    });
+
+    return {
+      clock, dateStr, tabs, checkin, dispatch, codes,
+      dayTabs, talent: talentSets[grp], weapon: weaponSets[grp],
+      dayBadge: dayNames[active].toUpperCase() + (active === this.todayIndex() ? ' · TODAY' : ''),
+    };
+  }
+}
+</script>
+</body>
+</html>

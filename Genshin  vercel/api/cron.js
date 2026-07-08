@@ -1,0 +1,167 @@
+const crypto = require('crypto');
+
+function generateDS(salt = '6s25p5ox5y14umn1p61aqyyvbvvl3lrt') {
+  const t = Math.floor(Date.now() / 1000);
+  const r = Math.random().toString(36).substring(2, 8);
+  const sign = crypto.createHash('md5').update(`salt=${salt}&t=${t}&r=${r}`).digest('hex');
+  return `${t},${r},${sign}`;
+}
+
+async function hoyo(url, extraHeaders = {}) {
+  const headers = {
+    'Cookie': `ltoken_v2=${process.env.HOYO_LTOKEN}; ltuid_v2=${process.env.HOYO_LTUID}; ltoken=${process.env.HOYO_LTOKEN}; ltuid=${process.env.HOYO_LTUID};`,
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+    'Referer': 'https://act.hoyolab.com/',
+    'x-rpc-app_version': '2.34.1',
+    'x-rpc-client_type': '4',
+    'DS': generateDS(),
+    ...extraHeaders
+  };
+  const r = await fetch(url, { headers });
+  return r.json();
+}
+
+async function discord(embeds) {
+  const url = process.env.DISCORD_WEBHOOK_URL;
+  if (!url || !embeds.length) return;
+  await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'Teyvat Chrono', embeds })
+  });
+}
+
+module.exports = async (req, res) => {
+  // Verify this is a legitimate Vercel cron call
+  const authHeader = req.headers['authorization'];
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const uid    = process.env.HOYO_UID;
+  const server = process.env.HOYO_SERVER || 'os_asia';
+  const resinThreshold = parseInt(process.env.RESIN_THRESHOLD) || 155;
+
+  if (!uid || !process.env.HOYO_LTOKEN || !process.env.HOYO_LTUID) {
+    return res.status(400).json({ error: 'Set HOYO_UID, HOYO_LTOKEN, HOYO_LTUID in Vercel environment variables.' });
+  }
+
+  const alerts = [];
+  const log    = [];
+
+  // ── 1. Daily Notes ─────────────────────────────────────────────────────────
+  try {
+    const d = await hoyo(
+      `https://bbs-api-os.hoyolab.com/game_record/genshin/api/dailyNote?role_id=${uid}&server=${server}`
+    );
+
+    if (d.retcode !== 0) {
+      log.push(`Daily notes error: [${d.retcode}] ${d.message}`);
+    } else {
+      const n = d.data;
+      log.push(`Resin ${n.current_resin}/${n.max_resin} | Coins ${n.current_home_coin}/${n.max_home_coin}`);
+
+      // Resin cap / approaching cap
+      if (n.current_resin >= n.max_resin) {
+        alerts.push({
+          title: '🌙 Resin CAPPED',
+          description: `Resin is full at **${n.current_resin}/${n.max_resin}** — it's overflowing! Go spend it.`,
+          color: 0xFF5E57
+        });
+      } else if (n.current_resin >= resinThreshold) {
+        alerts.push({
+          title: '🌙 Resin Approaching Cap',
+          description: `Resin at **${n.current_resin}/${n.max_resin}**. Will cap soon!`,
+          color: 0xECD073
+        });
+      }
+
+      // Expeditions finished
+      const doneExps = (n.expeditions || []).filter(e => e.status === 'Finished');
+      if (doneExps.length > 0) {
+        alerts.push({
+          title: '🧭 Expeditions Complete',
+          description: `**${doneExps.length}** expedition(s) are done and waiting to be collected.`,
+          color: 0x3CD5FF
+        });
+      }
+
+      // Realm currency full
+      if (n.current_home_coin >= n.max_home_coin) {
+        alerts.push({
+          title: '🪙 Realm Currency Full',
+          description: `Serenitea Pot at **${n.current_home_coin}/${n.max_home_coin}**. Collect from Tubby!`,
+          color: 0xC3A647
+        });
+      }
+
+      // Parametric Transformer ready
+      if (n.transformer?.obtained && n.transformer.recovery_time?.reached) {
+        alerts.push({
+          title: '⚗️ Parametric Transformer Ready',
+          description: 'Your Parametric Transformer cooldown is up — time to use it!',
+          color: 0xAF83FF
+        });
+      }
+
+      // Commissions done but Katheryne reward unclaimed
+      if (n.finished_task_num === n.total_task_num && !n.is_extra_task_reward_received) {
+        alerts.push({
+          title: '📋 Claim Your Katheryne Reward',
+          description: `All **${n.total_task_num}** daily commissions done, but you haven't collected from Katheryne yet.`,
+          color: 0x3CD5FF
+        });
+      }
+
+      log.push(`Exps done: ${doneExps.length} | Commissions: ${n.finished_task_num}/${n.total_task_num}`);
+    }
+  } catch (e) {
+    log.push(`Daily notes fetch failed: ${e.message}`);
+  }
+
+  // ── 2. Auto Daily Check-in ──────────────────────────────────────────────────
+  try {
+    const status = await hoyo('https://sg-hk4e-api.hoyolab.com/event/sol/info?act_id=e202102251931481');
+
+    if (status.retcode === 0 && !status.data.is_sign) {
+      const postBody = JSON.stringify({ act_id: 'e202102251931481' });
+      const headers = {
+        'Cookie': `ltoken_v2=${process.env.HOYO_LTOKEN}; ltuid_v2=${process.env.HOYO_LTUID}; ltoken=${process.env.HOYO_LTOKEN}; ltuid=${process.env.HOYO_LTUID};`,
+        'User-Agent': 'Mozilla/5.0',
+        'Referer': 'https://act.hoyolab.com/',
+        'x-rpc-app_version': '2.34.1',
+        'x-rpc-client_type': '4',
+        'Content-Type': 'application/json',
+        'DS': generateDS()
+      };
+      const sign = await fetch('https://sg-hk4e-api.hoyolab.com/event/sol/sign', {
+        method: 'POST', headers, body: postBody
+      }).then(r => r.json());
+
+      if (sign.retcode === 0 || sign.retcode === -5003) {
+        log.push('Check-in: claimed automatically');
+        alerts.push({
+          title: '✅ Daily Check-in Claimed',
+          description: `Today's HoYoLAB check-in reward was claimed automatically. Day **${status.data.total_sign_day + 1}** of this month.`,
+          color: 0x2ECC71
+        });
+      } else {
+        log.push(`Check-in failed: [${sign.retcode}] ${sign.message}`);
+      }
+    } else {
+      log.push('Check-in: already claimed today');
+    }
+  } catch (e) {
+    log.push(`Check-in error: ${e.message}`);
+  }
+
+  // ── 3. Send Discord alerts ──────────────────────────────────────────────────
+  try {
+    await discord(alerts);
+    if (alerts.length) log.push(`Sent ${alerts.length} Discord alert(s)`);
+  } catch (e) {
+    log.push(`Discord error: ${e.message}`);
+  }
+
+  return res.status(200).json({ ok: true, alerts: alerts.length, log });
+};
