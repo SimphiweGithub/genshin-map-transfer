@@ -1651,8 +1651,11 @@ async function fetchWishPage(authkey, gachaType, endId, gameBiz, lang) {
     game_biz:    biz,
   });
 
-  const r = await fetch(`https://${host}/event/gacha_info/api/getGachaLog?${qs}`);
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const r = await fetch(`https://${host}/event/gacha_info/api/getGachaLog?${qs}`, {
+    referrer: 'https://gs.hoyoverse.com/',
+    referrerPolicy: 'unsafe-url',
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status} from ${host}`);
   return r.json();
 }
 
