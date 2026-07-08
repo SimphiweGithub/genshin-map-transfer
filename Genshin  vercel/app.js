@@ -212,6 +212,16 @@ const FALLBACK_PROMO_CODES = [];
 let livePromoCodes = [];
 
 // Initialize application
+// Register the service worker (PWA: installable + offline shell).
+// Harmless on http://localhost; only active over https or localhost.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((e) =>
+      console.log("Service worker registration failed:", e.message)
+    );
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   loadLocalStorage();
   setupEventListeners();

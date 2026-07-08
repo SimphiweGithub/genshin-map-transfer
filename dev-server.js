@@ -10,8 +10,10 @@ const MIME = {
   '.js':   'application/javascript',
   '.json': 'application/json',
   '.png':  'image/png',
+  '.svg':  'image/svg+xml',
   '.ico':  'image/x-icon',
   '.wav':  'audio/wav',
+  '.webmanifest': 'application/manifest+json',
 };
 
 http.createServer((req, res) => {
