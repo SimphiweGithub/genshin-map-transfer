@@ -1483,74 +1483,98 @@ window.showCharDetail = function(idx) {
   document.getElementById('char-detail-fetter').innerHTML =
     `<span title="Friendship ${char.fetter}/10">${friendshipHearts(char.fetter)}</span>`;
 
-  // Weapon
-  const wpnRow = document.getElementById('char-detail-weapon-row');
-  if (char.weapon) {
-    const w = char.weapon;
-    const wpnStars = rarityStars(w.rarity, w.rarity >= 5 ? '#d4a017' : '#9b59b6');
-    const wpnIcon = (w.icon && w.icon.startsWith('http'))
-      ? `<img src="${w.icon}" class="char-detail-wpn-icon" alt="${w.name}" onerror="this.style.display='none'">`
-      : '';
-    wpnRow.innerHTML = `
-      <div class="char-wpn-card">
-        ${wpnIcon}
-        <div class="char-wpn-info">
-          <span class="char-wpn-name">${w.name || '—'}</span>
-          <span class="char-wpn-sub">${w.type_name || ''} · Lv.${w.level} · R${w.affix_level || 1}</span>
-          <span>${wpnStars}</span>
-        </div>
-      </div>`;
-  } else {
-    wpnRow.innerHTML = `<p class="empty-text">No weapon data</p>`;
-  }
+  // Show loading state for weapon/artifacts, then fetch
+  const wpnRow   = document.getElementById('char-detail-weapon-row');
+  const slots    = document.getElementById('char-detail-artifact-slots');
+  const setBonuses = document.getElementById('char-detail-set-bonuses');
+  wpnRow.innerHTML   = `<p class="empty-text" style="opacity:.5">Loading…</p>`;
+  slots.innerHTML    = `<p class="empty-text" style="opacity:.5">Loading…</p>`;
+  setBonuses.innerHTML = '';
 
-  // Artifacts
-  const slots     = document.getElementById('char-detail-artifact-slots');
-  const setBonuses= document.getElementById('char-detail-set-bonuses');
-  const relics    = char.reliquaries || [];
-  const POS_NAMES = ['', 'Flower', 'Plume', 'Sands', 'Goblet', 'Circlet'];
-
-  if (relics.length > 0) {
-    const slotMap = {};
-    relics.forEach(r => { slotMap[r.pos] = r; });
-
-    let slotsHtml = '';
-    for (let pos = 1; pos <= 5; pos++) {
-      const r = slotMap[pos];
-      if (r) {
-        const iconUrl = (r.icon && r.icon.startsWith('http')) ? r.icon : '';
-        slotsHtml += `
-          <div class="char-artifact-slot filled" title="${r.name}\n${r.set?.name || ''}" style="border-color:${r.rarity >= 5 ? '#d4a01755' : '#9b59b655'}">
-            ${iconUrl ? `<img src="${iconUrl}" alt="${POS_NAMES[pos]}" onerror="this.style.display='none'">` : `<span class="slot-label">${POS_NAMES[pos]}</span>`}
-            <span class="artifact-slot-level">+${r.level}</span>
-          </div>`;
-      } else {
-        slotsHtml += `<div class="char-artifact-slot empty"><span class="slot-label">${POS_NAMES[pos]}</span></div>`;
-      }
-    }
-    slots.innerHTML = slotsHtml;
-
-    // Set bonus summary
-    const setCounts = {};
-    relics.forEach(r => {
-      const sn = r.set?.name;
-      if (sn) setCounts[sn] = (setCounts[sn] || 0) + 1;
-    });
-    let bonusHtml = '';
-    Object.entries(setCounts).forEach(([setName, cnt]) => {
-      const pc = cnt >= 4 ? '4pc' : cnt >= 2 ? '2pc' : `${cnt}pc`;
-      bonusHtml += `<span class="set-bonus-chip"><span class="set-pc">${pc}</span> ${setName}</span>`;
-    });
-    setBonuses.innerHTML = bonusHtml || '';
-  } else {
-    slots.innerHTML = `<p class="empty-text">No artifact data</p>`;
-    setBonuses.innerHTML = '';
-  }
-
-  // Show overlay
+  // Show overlay immediately with base info
   document.getElementById('char-detail-overlay').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
+
+  // Fetch detailed weapon + artifact data
+  if (state.uid && state.server && state.ltoken && state.ltuid) {
+    const qs = new URLSearchParams({
+      action: 'characterDetail',
+      uid: state.uid, server: state.server,
+      ltoken: state.ltoken, ltuid: state.ltuid,
+      character_id: char.id
+    });
+    fetch(`/api/hoyolab?${qs}`)
+      .then(r => r.json())
+      .then(resp => {
+        const detail = (resp.data?.list || [])[0];
+        if (!detail) return;
+        renderCharWeapon(wpnRow, detail.weapon);
+        renderCharArtifacts(slots, setBonuses, detail.relics || []);
+      })
+      .catch(() => {
+        wpnRow.innerHTML   = `<p class="empty-text">Failed to load</p>`;
+        slots.innerHTML    = `<p class="empty-text">Failed to load</p>`;
+      });
+  } else {
+    wpnRow.innerHTML = `<p class="empty-text">Connect credentials to see weapon data</p>`;
+    slots.innerHTML  = `<p class="empty-text">Connect credentials to see artifact data</p>`;
+  }
 };
+
+function renderCharWeapon(wpnRow, w) {
+  if (!w || !w.name) { wpnRow.innerHTML = `<p class="empty-text">No weapon data</p>`; return; }
+  const wpnStars = rarityStars(w.rarity, w.rarity >= 5 ? '#d4a017' : '#9b59b6');
+  const wpnIcon  = w.icon
+    ? `<img src="${w.icon}" class="char-detail-wpn-icon" alt="${w.name}" onerror="this.style.display='none'">`
+    : '';
+  wpnRow.innerHTML = `
+    <div class="char-wpn-card">
+      ${wpnIcon}
+      <div class="char-wpn-info">
+        <span class="char-wpn-name">${w.name}</span>
+        <span class="char-wpn-sub">${w.type_name || ''} · Lv.${w.level} · R${w.affix_level || 1}</span>
+        <span>${wpnStars}</span>
+      </div>
+    </div>`;
+}
+
+function renderCharArtifacts(slots, setBonuses, relics) {
+  const POS_NAMES = ['', 'Flower', 'Plume', 'Sands', 'Goblet', 'Circlet'];
+  if (!relics.length) {
+    slots.innerHTML = `<p class="empty-text">No artifacts equipped</p>`;
+    setBonuses.innerHTML = '';
+    return;
+  }
+  const slotMap = {};
+  relics.forEach(r => { slotMap[r.pos] = r; });
+
+  let slotsHtml = '';
+  for (let pos = 1; pos <= 5; pos++) {
+    const r = slotMap[pos];
+    if (r) {
+      slotsHtml += `
+        <div class="char-artifact-slot filled" title="${r.name || ''} — ${r.set?.name || ''}" style="border-color:${r.rarity >= 5 ? '#d4a01755' : '#9b59b655'}">
+          ${r.icon ? `<img src="${r.icon}" alt="${POS_NAMES[pos]}" onerror="this.style.display='none'">` : `<span class="slot-label">${POS_NAMES[pos]}</span>`}
+          <span class="artifact-slot-level">+${r.level}</span>
+        </div>`;
+    } else {
+      slotsHtml += `<div class="char-artifact-slot empty"><span class="slot-label">${POS_NAMES[pos]}</span></div>`;
+    }
+  }
+  slots.innerHTML = slotsHtml;
+
+  const setCounts = {};
+  relics.forEach(r => {
+    const sn = r.set?.name;
+    if (sn) setCounts[sn] = (setCounts[sn] || 0) + 1;
+  });
+  let bonusHtml = '';
+  Object.entries(setCounts).forEach(([setName, cnt]) => {
+    const pc = cnt >= 4 ? '4pc' : cnt >= 2 ? '2pc' : `${cnt}pc`;
+    bonusHtml += `<span class="set-bonus-chip"><span class="set-pc">${pc}</span> ${setName}</span>`;
+  });
+  setBonuses.innerHTML = bonusHtml;
+}
 
 window.closeCharDetail = function() {
   document.getElementById('char-detail-overlay').classList.add('hidden');

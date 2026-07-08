@@ -29,14 +29,14 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const { action, uid, server, ltoken, ltuid, schedule_type } = req.query;
+  const { action, uid, server, ltoken, ltuid, schedule_type, character_id } = req.query;
 
   if (!action) {
     return res.status(400).json({ retcode: -1, message: 'Missing parameter: action is required' });
   }
 
   // Check-in check status endpoints don't strictly require uid/server, but battle chronicle endpoints do
-  if (['dailyNote', 'index', 'spiralAbyss', 'ysLedger'].includes(action) && (!uid || !server)) {
+  if (['dailyNote', 'index', 'spiralAbyss', 'ysLedger', 'characterDetail'].includes(action) && (!uid || !server)) {
     return res.status(400).json({ retcode: -1, message: 'Missing parameter: uid and server are required' });
   }
 
@@ -72,6 +72,20 @@ module.exports = async (req, res) => {
         url = `https://bbs-api-os.hoyolab.com/game_record/genshin/api/index?role_id=${uid}&server=${server}&lang=en-us`;
         headers['DS'] = generateDS();
         break;
+
+      case 'characterDetail': {
+        url = `https://bbs-api-os.hoyolab.com/game_record/genshin/api/character/detail`;
+        method = 'POST';
+        headers['Content-Type'] = 'application/json';
+        const cdBody = JSON.stringify({
+          character_ids: [parseInt(character_id)],
+          role_id: uid,
+          server
+        });
+        body = cdBody;
+        headers['DS'] = generateDS2('6s25p5ox5y14umn1p61aqyyvbvvl3lrt', cdBody, '');
+        break;
+      }
 
       case 'spiralAbyss':
         const sched = schedule_type || '1';
