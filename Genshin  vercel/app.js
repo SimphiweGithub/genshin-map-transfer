@@ -1630,11 +1630,28 @@ function saveStoredWishes(data) {
 
 // Fetch one page of 20 wishes via our proxy
 async function fetchWishPage(authkey, gachaType, endId, gameBiz, lang) {
+  // Fetch directly from HoYoverse — their gacha API allows browser CORS.
+  // Going through our Vercel proxy causes 504s because HoYoverse blocks datacenter IPs.
+  const biz  = gameBiz || 'hk4e_global';
+  const host = (biz === 'hk4e_cn' || biz.startsWith('cn_'))
+    ? 'hk4e-api.mihoyo.com'
+    : 'hk4e-api-os.hoyoverse.com';
+
   const qs = new URLSearchParams({
-    authkey, gacha_type: gachaType, end_id: endId || '0',
-    game_biz: gameBiz || 'hk4e_global', lang: lang || 'en'
+    authkey_ver: '1',
+    sign_type:   '2',
+    auth_appid:  'webview_gacha',
+    init_type:   gachaType,
+    gacha_type:  gachaType,
+    page:        '1',
+    size:        '20',
+    end_id:      endId || '0',
+    authkey,
+    lang:        lang || 'en',
+    game_biz:    biz,
   });
-  const r = await fetch(`/api/wishes?${qs}`);
+
+  const r = await fetch(`https://${host}/event/gacha_info/api/getGachaLog?${qs}`);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
 }
