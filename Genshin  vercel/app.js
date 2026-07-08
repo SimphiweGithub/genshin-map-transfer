@@ -171,7 +171,7 @@ let state = {
   },
 
   // Cooldowns
-  transformerLastUsed: 0, // Date.now() timestamp when used
+  transformerReadyAt: 0, // Date.now() ms timestamp when transformer becomes ready (0 = already ready)
   customTimers: [], // Array of { id, name, duration, startTime }
 
   // Resets & Checklist states
@@ -552,17 +552,15 @@ async function handleRefresh() {
 
       // Parse Parametric Transformer Cooldown
       if (d.transformer && d.transformer.obtained) {
-        if (d.transformer.recovery_time.reached) {
-          state.transformerLastUsed = 0; // ready
+        const rt = d.transformer.recovery_time;
+        if (rt.reached) {
+          state.transformerReadyAt = 0; // already ready
         } else {
-          // Calculate approximate last used based on recovery seconds
-          const totalCooldown = 7 * 24 * 3600; // 7 days in seconds
-          const remainingSeconds = d.transformer.recovery_time.Day * 86400 + 
-                                   d.transformer.recovery_time.Hour * 3600 + 
-                                   d.transformer.recovery_time.Minute * 60 + 
-                                   d.transformer.recovery_time.Second;
-          const elapsed = totalCooldown - remainingSeconds;
-          state.transformerLastUsed = Date.now() - (elapsed * 1000);
+          const remainingSeconds = (rt.Day || 0) * 86400 +
+                                   (rt.Hour || 0) * 3600 +
+                                   (rt.Minute || 0) * 60 +
+                                   (rt.Second || 0);
+          state.transformerReadyAt = Date.now() + remainingSeconds * 1000;
         }
       }
 
@@ -1099,19 +1097,13 @@ function appTimerLoop() {
   }
 
   // 6. Parametric Transformer countdown
-  if (state.transformerLastUsed > 0) {
-    const elapsedSeconds = Math.floor((now - state.transformerLastUsed) / 1000);
-    const totalCooldown = 7 * 24 * 3600 - 120; // 7 days in seconds (minus small margin)
-    const remaining = totalCooldown - elapsedSeconds;
-
-    if (remaining > 0) {
-      document.getElementById("transformer-countdown").innerText = formatDuration(remaining);
-      const readyDate = new Date(state.transformerLastUsed + totalCooldown * 1000);
-      document.getElementById("transformer-date").innerText = `Available: ${readyDate.toLocaleDateString()} at ${readyDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-    } else {
-      document.getElementById("transformer-countdown").innerText = "Ready!";
-      document.getElementById("transformer-date").innerText = "Available now";
-    }
+  const tReady = state.transformerReadyAt;
+  if (tReady > 0 && tReady > now) {
+    const remaining = Math.floor((tReady - now) / 1000);
+    document.getElementById("transformer-countdown").innerText = formatDuration(remaining);
+    const readyDate = new Date(tReady);
+    document.getElementById("transformer-date").innerText =
+      `Available: ${readyDate.toLocaleDateString()} at ${readyDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
   } else {
     document.getElementById("transformer-countdown").innerText = "Ready!";
     document.getElementById("transformer-date").innerText = "Available now";
