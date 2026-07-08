@@ -1445,3 +1445,18 @@ kbd {
   .wish-type, .wish-banner-tag { display: none; }
   .pity-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+.wish-ps-snippet {
+  margin-top: 6px;
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(71,191,224,.2);
+  border-radius: 6px;
+  padding: 8px 10px;
+  overflow-x: auto;
+}
+.wish-ps-snippet code {
+  font-size: .67rem;
+  color: #47bfe0;
+  white-space: pre;
+  user-select: all;
+}
