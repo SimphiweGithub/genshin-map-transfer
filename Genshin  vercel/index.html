@@ -94,6 +94,7 @@
     <button class="tab-link" data-tab="characters">Characters & Maps</button>
     <button class="tab-link" data-tab="abyss">Spiral Abyss & Ledger</button>
     <button class="tab-link" data-tab="domains">Domain Schedule</button>
+    <button class="tab-link" data-tab="wishes">Wish History</button>
 
   </nav>
 
@@ -475,6 +476,77 @@
     </section>
 
 
+
+    <!-- WISH HISTORY TAB -->
+    <section id="tab-wishes" class="tab-panel">
+      <div class="wishes-layout">
+
+        <!-- Sync card -->
+        <div class="card glass-card col-span-full">
+          <div class="card-header">
+            <span class="card-icon">✦</span>
+            <h2>Wish History Sync</h2>
+          </div>
+          <div class="wish-sync-body">
+            <div class="wish-instructions">
+              <p class="wish-hint-title">How to get your AuthKey URL:</p>
+              <ol class="wish-hint-list">
+                <li>Open <strong>Genshin Impact</strong> on PC and go to <strong>Wish → History</strong></li>
+                <li>Open <code>%AppData%\LocalLow\miHoYo\Genshin Impact\output_log.txt</code></li>
+                <li>Find the line starting with <code>OnGetWebViewPageFinish</code> — copy the full URL</li>
+                <li>Paste it below. The key expires in ~24 hours.</li>
+              </ol>
+            </div>
+            <div class="wish-input-row">
+              <input type="text" id="wish-authkey-input" class="form-input" placeholder="Paste your wish history URL here…" autocomplete="off">
+              <button id="wish-fetch-btn" class="btn btn-primary">Fetch Wishes</button>
+            </div>
+            <div id="wish-sync-status" class="wish-sync-status hidden"></div>
+            <div class="wish-actions-row">
+              <button id="wish-export-btn" class="btn btn-secondary btn-sm">Export JSON</button>
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer">
+                Import JSON <input type="file" id="wish-import-file" accept=".json" style="display:none">
+              </label>
+              <button id="wish-clear-btn" class="btn btn-danger btn-sm">Clear Stored Data</button>
+              <span id="wish-last-sync" class="wish-last-sync"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pity counters -->
+        <div class="card glass-card col-span-full">
+          <div class="card-header">
+            <span class="card-icon">⭐</span>
+            <h2>Pity Counters</h2>
+          </div>
+          <div class="pity-grid" id="pity-grid">
+            <p class="empty-text">Sync wish history to see pity counters.</p>
+          </div>
+        </div>
+
+        <!-- Wish stats -->
+        <div class="card glass-card col-span-full" id="wish-stats-card" style="display:none">
+          <div class="card-header">
+            <span class="card-icon">📊</span>
+            <h2>Lifetime Stats</h2>
+          </div>
+          <div class="wish-stats-grid" id="wish-stats-grid"></div>
+        </div>
+
+        <!-- Recent pulls -->
+        <div class="card glass-card col-span-full">
+          <div class="card-header">
+            <span class="card-icon">🎴</span>
+            <h2>Recent Pulls</h2>
+            <div class="wish-filter-row" id="wish-filter-row" style="margin-left:auto;display:flex;gap:6px"></div>
+          </div>
+          <div id="wish-history-list" class="wish-history-list">
+            <p class="empty-text">No wish data. Sync above to load your history.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
 
   </main>
 

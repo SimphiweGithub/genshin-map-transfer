@@ -256,6 +256,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') acquireWakeLock();
   });
+
+  // Wish history tab
+  initWishTab();
 });
 
 // Load state from localStorage
@@ -1601,6 +1604,277 @@ window.closeCharDetail = function() {
   document.getElementById('char-detail-overlay').classList.add('hidden');
   document.body.style.overflow = '';
 };
+
+// ═══════════════════════════════════════════════════════
+//  WISH HISTORY
+// ═══════════════════════════════════════════════════════
+
+const GACHA_BANNERS = [
+  { type: '301', name: 'Character Event', softPity: 74, hardPity: 90,  color: '#ef7027' },
+  { type: '302', name: 'Weapon Event',    softPity: 63, hardPity: 80,  color: '#9f71cf' },
+  { type: '200', name: 'Standard',        softPity: 74, hardPity: 90,  color: '#47bfe0' },
+  { type: '100', name: 'Beginner',        softPity: 74, hardPity: 90,  color: '#74c2a0' },
+  { type: '500', name: 'Chronicled',      softPity: 74, hardPity: 90,  color: '#c8a040' },
+];
+
+const WISH_STORAGE_KEY = 'teyvatChrono_wishes_v1';
+
+function loadStoredWishes() {
+  try { return JSON.parse(localStorage.getItem(WISH_STORAGE_KEY) || 'null'); }
+  catch { return null; }
+}
+
+function saveStoredWishes(data) {
+  localStorage.setItem(WISH_STORAGE_KEY, JSON.stringify(data));
+}
+
+// Fetch one page of 20 wishes via our proxy
+async function fetchWishPage(authkey, gachaType, endId, gameBiz, lang) {
+  const qs = new URLSearchParams({
+    authkey, gacha_type: gachaType, end_id: endId || '0',
+    game_biz: gameBiz || 'hk4e_global', lang: lang || 'en'
+  });
+  const r = await fetch(`/api/wishes?${qs}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+// Fetch all pages for a banner type, merging with existing
+async function fetchBannerAll(authkey, banner, existingIds, gameBiz, lang, onProgress) {
+  const wishes = [];
+  let endId = '0';
+  let page = 0;
+
+  while (true) {
+    page++;
+    onProgress(`${banner.name} — page ${page} (${wishes.length} pulled so far)…`);
+    const data = await fetchWishPage(authkey, banner.type, endId, gameBiz, lang);
+
+    if (data.retcode !== 0) {
+      if (data.retcode === -101) throw new Error('AuthKey expired. Please get a fresh URL from the game.');
+      console.warn(`Banner ${banner.type} retcode ${data.retcode}:`, data.message);
+      break;
+    }
+
+    const list = data.data?.list || [];
+    if (!list.length) break;
+
+    // Stop when we hit wishes we already have
+    let hitExisting = false;
+    for (const w of list) {
+      if (existingIds.has(w.id)) { hitExisting = true; break; }
+      wishes.push(w);
+    }
+
+    endId = list[list.length - 1].id;
+    if (hitExisting || list.length < 20) break;
+
+    await new Promise(r => setTimeout(r, 350)); // rate-limit courtesy
+  }
+
+  return wishes;
+}
+
+// Compute pity for a banner (wishes sorted newest-first)
+function calcPity(wishes) {
+  let pity = 0;
+  for (const w of wishes) {
+    if (parseInt(w.rank_type) === 5) return { pity, atHard: false };
+    pity++;
+  }
+  return { pity, atHard: false };
+}
+
+// Compute lifetime stats for a banner
+function bannerStats(wishes) {
+  const total = wishes.length;
+  const fiveStars = wishes.filter(w => w.rank_type === '5');
+  const fourStars = wishes.filter(w => w.rank_type === '4');
+  const avgPity = fiveStars.length
+    ? Math.round(total / fiveStars.length)
+    : null;
+  return { total, fiveStars: fiveStars.length, fourStars: fourStars.length, avgPity };
+}
+
+// Main sync entry point
+async function syncWishHistory() {
+  const input  = document.getElementById('wish-authkey-input').value.trim();
+  const status = document.getElementById('wish-sync-status');
+  const btn    = document.getElementById('wish-fetch-btn');
+
+  if (!input) { status.textContent = 'Please paste your wish history URL first.'; status.className = 'wish-sync-status error'; status.classList.remove('hidden'); return; }
+
+  let parsed, authkey, gameBiz, lang;
+  try {
+    parsed  = new URL(input);
+    authkey = parsed.searchParams.get('authkey');
+    gameBiz = parsed.searchParams.get('game_biz') || 'hk4e_global';
+    lang    = parsed.searchParams.get('lang') || 'en';
+    if (!authkey) throw new Error('No authkey in URL');
+  } catch {
+    status.textContent = 'Invalid URL — make sure you copied the full URL from the game.';
+    status.className = 'wish-sync-status error'; status.classList.remove('hidden'); return;
+  }
+
+  btn.disabled = true;
+  status.className = 'wish-sync-status'; status.classList.remove('hidden');
+
+  const stored = loadStoredWishes() || { banners: {}, fetchedAt: null };
+
+  try {
+    for (const banner of GACHA_BANNERS) {
+      const existing  = stored.banners[banner.type] || [];
+      const existIds  = new Set(existing.map(w => w.id));
+      const newWishes = await fetchBannerAll(authkey, banner, existIds, gameBiz, lang,
+        msg => { status.textContent = msg; });
+
+      // Merge: new wishes go on top (they're newer), sort by ID desc
+      stored.banners[banner.type] = [...newWishes, ...existing]
+        .sort((a, b) => (b.id > a.id ? 1 : -1));
+    }
+
+    stored.fetchedAt = new Date().toISOString();
+    saveStoredWishes(stored);
+
+    const total = Object.values(stored.banners).reduce((s, a) => s + a.length, 0);
+    status.textContent = `✓ Sync complete — ${total.toLocaleString()} wishes stored.`;
+    status.className = 'wish-sync-status success';
+    renderWishUI(stored);
+  } catch (err) {
+    status.textContent = `Error: ${err.message}`;
+    status.className = 'wish-sync-status error';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Render pity counters + stats + recent list
+function renderWishUI(data) {
+  if (!data) { data = loadStoredWishes(); }
+  if (!data) return;
+
+  // Last sync label
+  const lastEl = document.getElementById('wish-last-sync');
+  if (data.fetchedAt) lastEl.textContent = `Last sync: ${new Date(data.fetchedAt).toLocaleString()}`;
+
+  // Pity grid
+  const pityGrid = document.getElementById('pity-grid');
+  pityGrid.innerHTML = GACHA_BANNERS.map(b => {
+    const wishes  = data.banners[b.type] || [];
+    const { pity } = calcPity(wishes);
+    const stats  = bannerStats(wishes);
+    const danger = pity >= b.softPity;
+    const pct    = Math.min(100, Math.round(pity / b.hardPity * 100));
+    return `
+      <div class="pity-card" style="--pity-color:${b.color}">
+        <div class="pity-name">${b.name}</div>
+        <div class="pity-count ${danger ? 'pity-danger' : ''}">${pity}</div>
+        <div class="pity-label">pulls since last ✦5</div>
+        <div class="pity-bar"><div class="pity-fill" style="width:${pct}%;background:${b.color}"></div></div>
+        <div class="pity-sub">${stats.total.toLocaleString()} total · ${stats.fiveStars} ✦5${stats.avgPity ? ` · avg pity ${stats.avgPity}` : ''}</div>
+      </div>`;
+  }).join('');
+
+  // Lifetime stats
+  const allWishes = Object.values(data.banners).flat();
+  if (allWishes.length) {
+    document.getElementById('wish-stats-card').style.display = '';
+    const total    = allWishes.length;
+    const five     = allWishes.filter(w => w.rank_type === '5').length;
+    const four     = allWishes.filter(w => w.rank_type === '4').length;
+    const fiveRate = total ? (five / total * 100).toFixed(2) : '—';
+    document.getElementById('wish-stats-grid').innerHTML = [
+      ['Total Wishes', total.toLocaleString()],
+      ['5★ Pulled', five],
+      ['4★ Pulled', four],
+      ['5★ Rate', `${fiveRate}%`],
+      ['Primogems Spent (est.)', (total * 160).toLocaleString()],
+    ].map(([l, v]) => `<div class="wish-stat-box"><span class="wish-stat-val">${v}</span><span class="wish-stat-lbl">${l}</span></div>`).join('');
+  }
+
+  // Recent pulls — show active banner filter
+  const filterRow = document.getElementById('wish-filter-row');
+  filterRow.innerHTML = [{ type: 'all', name: 'All' }, ...GACHA_BANNERS]
+    .map(b => `<button class="btn btn-sm ${state._wishFilter === b.type ? 'btn-primary' : 'btn-secondary'} wish-filter-btn" data-type="${b.type}">${b.name}</button>`)
+    .join('');
+
+  renderWishList(data, state._wishFilter || 'all');
+}
+
+function renderWishList(data, filterType) {
+  state._wishFilter = filterType;
+  const list = document.getElementById('wish-history-list');
+
+  let wishes = filterType === 'all'
+    ? Object.entries(data.banners).flatMap(([type, arr]) => arr.map(w => ({ ...w, _banner: type })))
+    : (data.banners[filterType] || []).map(w => ({ ...w, _banner: filterType }));
+
+  wishes = wishes.sort((a, b) => (b.id > a.id ? 1 : -1)).slice(0, 100);
+
+  if (!wishes.length) { list.innerHTML = '<p class="empty-text">No wishes for this banner yet.</p>'; return; }
+
+  const banner = b => GACHA_BANNERS.find(x => x.type === b) || {};
+  list.innerHTML = wishes.map(w => {
+    const r = parseInt(w.rank_type);
+    const col = r === 5 ? '#d4a017' : r === 4 ? '#9b59b6' : 'rgba(255,255,255,.4)';
+    const stars = '✦'.repeat(r);
+    return `<div class="wish-item wish-r${r}">
+      <span class="wish-stars" style="color:${col}">${stars}</span>
+      <span class="wish-name">${w.name}</span>
+      <span class="wish-type">${w.item_type}</span>
+      <span class="wish-banner-tag" style="color:${banner(w._banner).color || '#aaa'}">${banner(w._banner).name || ''}</span>
+      <span class="wish-date">${w.time?.slice(0, 10) || ''}</span>
+    </div>`;
+  }).join('');
+}
+
+function initWishTab() {
+  document.getElementById('wish-fetch-btn')?.addEventListener('click', syncWishHistory);
+
+  document.getElementById('wish-export-btn')?.addEventListener('click', () => {
+    const data = loadStoredWishes();
+    if (!data) return;
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'teyvat-chrono-wishes.json' });
+    a.click();
+  });
+
+  document.getElementById('wish-import-file')?.addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        saveStoredWishes(data);
+        renderWishUI(data);
+        document.getElementById('wish-sync-status').textContent = '✓ Import successful.';
+        document.getElementById('wish-sync-status').className = 'wish-sync-status success';
+        document.getElementById('wish-sync-status').classList.remove('hidden');
+      } catch { alert('Invalid JSON file.'); }
+    };
+    reader.readAsText(f);
+  });
+
+  document.getElementById('wish-clear-btn')?.addEventListener('click', () => {
+    if (!confirm('Clear all stored wish data?')) return;
+    localStorage.removeItem(WISH_STORAGE_KEY);
+    document.getElementById('pity-grid').innerHTML = '<p class="empty-text">Sync wish history to see pity counters.</p>';
+    document.getElementById('wish-history-list').innerHTML = '<p class="empty-text">No wish data. Sync above to load your history.</p>';
+    document.getElementById('wish-stats-card').style.display = 'none';
+    document.getElementById('wish-last-sync').textContent = '';
+  });
+
+  document.getElementById('wish-filter-row')?.addEventListener('click', e => {
+    const btn = e.target.closest('.wish-filter-btn'); if (!btn) return;
+    const data = loadStoredWishes(); if (!data) return;
+    renderWishList(data, btn.dataset.type);
+    renderWishUI(data);
+  });
+
+  // Load any previously stored data on tab open
+  const stored = loadStoredWishes();
+  if (stored) renderWishUI(stored);
+}
 
 // Draw characters list catalog
 function updateCharactersCatalogUI() {
