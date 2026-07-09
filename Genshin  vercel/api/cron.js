@@ -155,7 +155,70 @@ module.exports = async (req, res) => {
     log.push(`Check-in error: ${e.message}`);
   }
 
-  // ── 3. Send Discord alerts ──────────────────────────────────────────────────
+  // ── 3. Daily Briefing ───────────────────────────────────────────────────────
+  try {
+    const DOMAIN_TALENTS = [
+      { name: "Freedom",    location: "Mondstadt",  days: [1, 4, 0], chars: ["Amber", "Barbara", "Diona", "Klee", "Sucrose", "Tartaglia", "Aloy"] },
+      { name: "Resistance", location: "Mondstadt",  days: [2, 5, 0], chars: ["Bennett", "Diluc", "Eula", "Jean", "Mona", "Noelle", "Razor"] },
+      { name: "Ballad",     location: "Mondstadt",  days: [3, 6, 0], chars: ["Albedo", "Fischl", "Kaeya", "Lisa", "Rosaria", "Venti"] },
+      { name: "Prosperity", location: "Liyue",      days: [1, 4, 0], chars: ["Keqing", "Ningguang", "Qiqi", "Shenhe", "Xiao", "Yelan"] },
+      { name: "Diligence",  location: "Liyue",      days: [2, 5, 0], chars: ["Chongyun", "Ganyu", "Hu Tao", "Kazuha", "Xiangling", "Yun Jin"] },
+      { name: "Gold",       location: "Liyue",      days: [3, 6, 0], chars: ["Beidou", "Xingqiu", "Xinyan", "Zhongli", "Yanfei"] },
+      { name: "Transience", location: "Inazuma",    days: [1, 4, 0], chars: ["Yoimiya", "Kokomi", "Thoma", "Heizou"] },
+      { name: "Elegance",   location: "Inazuma",    days: [2, 5, 0], chars: ["Ayaka", "Ayato", "Sara", "Itto", "Kuki Shinobu"] },
+      { name: "Light",      location: "Inazuma",    days: [3, 6, 0], chars: ["Raiden Shogun", "Yae Miko", "Sayu", "Gorou"] },
+      { name: "Admonition", location: "Sumeru",     days: [1, 4, 0], chars: ["Tighnari", "Cyno", "Faruzan", "Candace"] },
+      { name: "Ingenuity",  location: "Sumeru",     days: [2, 5, 0], chars: ["Nahida", "Alhaitham", "Dori", "Layla"] },
+      { name: "Praxis",     location: "Sumeru",     days: [3, 6, 0], chars: ["Wanderer", "Nilou", "Dehya", "Collei", "Kaveh"] },
+      { name: "Equity",     location: "Fontaine",   days: [1, 4, 0], chars: ["Lyney", "Neuvillette", "Navia"] },
+      { name: "Justice",    location: "Fontaine",   days: [2, 5, 0], chars: ["Wriothesley", "Furina", "Charlotte", "Freminet"] },
+      { name: "Order",      location: "Fontaine",   days: [3, 6, 0], chars: ["Arlecchino", "Clorinde", "Emilie", "Sigewinne", "Chevreuse"] },
+      { name: "Contention", location: "Natlan",     days: [1, 4, 0], chars: ["Mualani", "Kachina", "Kinich"] },
+      { name: "Kindling",   location: "Natlan",     days: [2, 5, 0], chars: ["Chasca", "Olorun"] },
+      { name: "Conflict",   location: "Natlan",     days: [3, 6, 0], chars: ["Xilonen", "Citlali"] },
+    ];
+
+    // Use server timezone for "today"
+    const SERVER_OFFSETS = { os_usa: -5, os_euro: 1, os_asia: 8, os_cht: 8 };
+    const srvOffset = SERVER_OFFSETS[server] || 1;
+    const srvNow = new Date(Date.now() + srvOffset * 3600000 + new Date().getTimezoneOffset() * 60000);
+    const srvDay = srvNow.getDay();
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    const todayBooks = DOMAIN_TALENTS.filter(t => t.days.includes(srvDay));
+    const bookLines = todayBooks.map(t => `• **${t.name}** (${t.location}) — ${t.chars.slice(0, 4).join(', ')}`).join('\n');
+
+    // Weekly boss reminder — Sunday (day before Monday reset)
+    // We already have daily notes data from step 1
+    let bossLine = '';
+    try {
+      const d = await hoyo(
+        `https://bbs-api-os.hoyolab.com/game_record/genshin/api/dailyNote?role_id=${uid}&server=${server}`
+      );
+      if (d.retcode === 0) {
+        const remaining = d.data.remain_resin_discount_num;
+        if (remaining > 0 && srvDay === 0) {
+          bossLine = `\n⚔️ **${remaining} boss discount${remaining > 1 ? 's' : ''} left** — weekly reset is tomorrow!`;
+          alerts.push({
+            title: '⚔️ Weekly Boss Discounts Expiring',
+            description: `You have **${remaining}** half-cost boss discount${remaining > 1 ? 's' : ''} remaining and weekly reset is tomorrow. Don't let them go to waste!`,
+            color: 0xE67E22
+          });
+        }
+      }
+    } catch (_) {}
+
+    alerts.push({
+      title: `📋 Daily Briefing — ${dayNames[srvDay]}`,
+      description: `**Today's Talent Books:**\n${bookLines || 'All books available (Sunday)'}${bossLine}\n\n🌙 Check your resin and expeditions!`,
+      color: 0x3CD5FF
+    });
+    log.push('Daily briefing generated');
+  } catch (e) {
+    log.push(`Briefing error: ${e.message}`);
+  }
+
+  // ── 4. Send Discord alerts ──────────────────────────────────────────────────
   try {
     await discord(alerts);
     if (alerts.length) log.push(`Sent ${alerts.length} Discord alert(s)`);

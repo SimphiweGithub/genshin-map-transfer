@@ -1573,3 +1573,35 @@ kbd {
 .build-row-score.needs-work { color: #e84a5f; }
 .build-row-score.almost { color: #c8a040; }
 .build-row-score.built { color: #74c2a0; }
+
+/* ── Planner toggles & projection ──────────────────────────── */
+.planner-toggle {
+  flex-direction: row !important; align-items: center; gap: 6px;
+  cursor: pointer; min-width: auto !important;
+}
+.planner-toggle input[type="checkbox"] {
+  width: 16px; height: 16px; accent-color: #c8a040; cursor: pointer;
+}
+.planner-projection {
+  margin-top: 10px; padding: 10px 12px;
+  background: rgba(71,191,224,.04);
+  border: 1px solid rgba(71,191,224,.1);
+  border-radius: 8px; font-size: .82rem;
+  line-height: 1.6;
+}
+.planner-projection .proj-rate { color: #47bfe0; font-weight: 600; }
+.planner-projection .proj-date { color: #c8a040; font-weight: 600; }
+.planner-projection .proj-label { color: rgba(255,255,255,.5); }
+
+/* ── Resin spending advisor ────────────────────────────────── */
+.resin-advisor {
+  margin-top: 8px; padding: 8px 10px;
+  background: rgba(200,160,64,.06);
+  border: 1px solid rgba(200,160,64,.12);
+  border-radius: 8px; font-size: .8rem;
+}
+.resin-tip { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
+.resin-tip:last-child { margin-bottom: 0; }
+.resin-tip-icon { flex-shrink: 0; font-size: .9rem; }
+.resin-tip-text { color: rgba(255,255,255,.75); }
+.resin-tip-text strong { color: #c8a040; }

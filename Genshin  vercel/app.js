@@ -266,7 +266,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // Wake lock — keep screen on while dashboard is open
   acquireWakeLock();
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') acquireWakeLock();
+    if (document.visibilityState === 'visible') {
+      acquireWakeLock();
+      // Auto-sync when the user comes back to the tab (throttled: 2 min minimum gap)
+      if (state.uid && state.ltoken && state.ltuid && Date.now() - state.lastSyncTime > 2 * 60 * 1000) {
+        handleRefresh();
+      }
+    }
   });
 
   // Wish history tab
@@ -1421,6 +1427,7 @@ function updateUI() {
   // Characters Catalog UI
   updateCharactersCatalogUI();
   renderBuildPriorities();
+  renderResinAdvisor();
 
   // Exploration Map UI
   updateOculiTracker();
@@ -1849,6 +1856,61 @@ function renderBuildPriorities() {
   }).join('') + (built > 0 ? `<p class="empty-text" style="margin-top:6px;font-size:.75rem;color:#74c2a0">+ ${built} fully built character${built > 1 ? 's' : ''}</p>` : '');
 }
 
+function renderResinAdvisor() {
+  const container = document.getElementById('resin-advisor');
+  if (!container) return;
+
+  if (!state.characters || state.characters.length === 0 || !state.characterDetails || Object.keys(state.characterDetails).length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const today = new Date().getDay();
+  const tips = [];
+
+  // Cross-reference build priorities with today's farmable talent books
+  const todaysTalents = DOMAIN_MATERIALS.talents.filter(t => t.days.includes(today));
+  const charNames = state.characters.map(c => getCharDisplayName(c));
+
+  for (const mat of todaysTalents) {
+    const matching = mat.characters.filter(name => charNames.includes(name));
+    if (!matching.length) continue;
+
+    for (const name of matching) {
+      const char = state.characters.find(c => getCharDisplayName(c) === name);
+      if (!char) continue;
+      const detail = state.characterDetails[char.id];
+      if (!detail) continue;
+      const skills = (detail.skills || []).filter(s =>
+        s.skill_type === 1 || s.skill_type === 2 || s.skill_type === 3 ||
+        (!s.skill_type && (detail.skills || []).indexOf(s) < 3)
+      ).slice(0, 3);
+      const minTalent = skills.length ? Math.min(...skills.map(s => s.level_current || s.level || 0)) : 10;
+      if (minTalent < 8) {
+        tips.push(`<div class="resin-tip"><span class="resin-tip-icon">📖</span><span class="resin-tip-text">Farm <strong>${mat.name}</strong> for <strong>${name}</strong> (talents ${skills.map(s => s.level_current || s.level || 0).join('/')})</span></div>`);
+      }
+    }
+  }
+
+  // Weapon material recommendations
+  // (generic — no per-weapon mapping, just flag if anyone has a low weapon)
+  for (const c of state.characters) {
+    const d = state.characterDetails[c.id];
+    if (!d || !d.weapon) continue;
+    if ((d.weapon.level || 0) < 70 && c.rarity >= 5) {
+      tips.push(`<div class="resin-tip"><span class="resin-tip-icon">⚔️</span><span class="resin-tip-text">Level <strong>${getCharDisplayName(c)}</strong>'s weapon (Lv.${d.weapon.level} ${d.weapon.name})</span></div>`);
+      if (tips.length >= 4) break;
+    }
+  }
+
+  if (tips.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = `<strong style="font-size:.72rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Today's farming tips</strong>` + tips.slice(0, 4).join('');
+}
+
 window.closeCharDetail = function() {
   document.getElementById('char-detail-overlay').classList.add('hidden');
   document.body.style.overflow = '';
@@ -2225,23 +2287,39 @@ function renderPlanner(data) {
   const p = loadPlanner();
   const primos = Math.max(0, parseInt(p.primos) || 0);
   const fate   = Math.max(0, parseInt(p.fate)   || 0);
+  const welkin = !!p.welkin;
+  const bp     = !!p.bp;
   const totalPulls = Math.floor(primos / 160) + fate;
+
+  // Daily primo income estimate
+  let dailyPrimos = 60; // commissions
+  if (welkin) dailyPrimos += 90;
+  if (bp)     dailyPrimos += 16; // ~680 over 42 days
+  dailyPrimos += 20; // events/web events average
 
   const out = document.getElementById('planner-output');
   if (!out) return;
 
   // Worst-case pulls to next featured 5★ per 50/50 banner
-  const rows = GACHA_BANNERS.filter(b => b.fiftyFifty).map(b => {
+  const bannerRows = GACHA_BANNERS.filter(b => b.fiftyFifty).map(b => {
     const wishes = data.banners[b.type] || [];
     const { pity } = calcPity(wishes);
     const ff = analyzeFiftyFifty(wishes.filter(w => w.rank_type === '5'), b.fiftyFifty);
-    // Guaranteed featured worst case: reach hard pity now; if not guaranteed,
-    // you might lose the flip first, then guarantee at the next hard pity.
     const worstGuarantee = ff.guaranteedNext
       ? (b.hardPity - pity)
       : (b.hardPity - pity) + b.hardPity;
     const enough = totalPulls >= worstGuarantee;
     const short  = Math.max(0, worstGuarantee - totalPulls);
+
+    // Days to guaranteed if not enough
+    let dateStr = '';
+    if (!enough && dailyPrimos > 0) {
+      const primosNeeded = short * 160;
+      const daysNeeded = Math.ceil(primosNeeded / dailyPrimos);
+      const targetDate = new Date(Date.now() + daysNeeded * 86400000);
+      dateStr = `<span class="proj-date">${targetDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`;
+    }
+
     return `
       <div class="planner-row">
         <span class="planner-row-name" style="color:${b.color}">${b.name}</span>
@@ -2249,7 +2327,7 @@ function renderPlanner(data) {
           worst-case <strong>${worstGuarantee}</strong> pulls to guaranteed featured
           ${enough
             ? `<span class="planner-ok">✓ you have enough</span>`
-            : `<span class="planner-short">need ${short} more</span>`}
+            : `<span class="planner-short">need ${short} more${dateStr ? ` · ready ${dateStr}` : ''}</span>`}
         </span>
       </div>`;
   }).join('');
@@ -2259,7 +2337,24 @@ function renderPlanner(data) {
       <span class="planner-total-val">${totalPulls.toLocaleString()}</span>
       <span class="planner-total-lbl">pulls available (${primos.toLocaleString()} primogems ÷ 160 + ${fate} fate)</span>
     </div>
-    ${rows}`;
+    ${bannerRows}`;
+
+  // Primo income projection
+  const proj = document.getElementById('planner-projection');
+  if (proj) {
+    const pullsPerDay = dailyPrimos / 160;
+    const in7  = totalPulls + Math.floor(pullsPerDay * 7);
+    const in30 = totalPulls + Math.floor(pullsPerDay * 30);
+    const in60 = totalPulls + Math.floor(pullsPerDay * 60);
+    proj.innerHTML = `
+      <span class="proj-label">Daily income:</span> <span class="proj-rate">~${dailyPrimos} primos/day</span>
+      (${welkin ? 'Welkin ✓' : 'no Welkin'} · ${bp ? 'BP ✓' : 'no BP'})<br>
+      <span class="proj-label">Projected pulls:</span>
+      <span class="proj-date">${in7}</span> in 7 days ·
+      <span class="proj-date">${in30}</span> in 30 days ·
+      <span class="proj-date">${in60}</span> in 60 days
+    `;
+  }
 }
 
 function renderWishList(data, filterType) {
@@ -2336,15 +2431,26 @@ function initWishTab() {
   const plannerData = loadPlanner();
   const primosInput = document.getElementById('planner-primos');
   const fateInput   = document.getElementById('planner-fate');
+  const welkinInput = document.getElementById('planner-welkin');
+  const bpInput     = document.getElementById('planner-bp');
   if (primosInput) primosInput.value = plannerData.primos || '';
   if (fateInput)   fateInput.value   = plannerData.fate   || '';
+  if (welkinInput) welkinInput.checked = !!plannerData.welkin;
+  if (bpInput)     bpInput.checked     = !!plannerData.bp;
   const onPlannerChange = () => {
-    savePlanner({ primos: primosInput?.value || '', fate: fateInput?.value || '' });
+    savePlanner({
+      primos: primosInput?.value || '',
+      fate: fateInput?.value || '',
+      welkin: welkinInput?.checked || false,
+      bp: bpInput?.checked || false
+    });
     const d = loadStoredWishes();
     if (d) renderPlanner(d);
   };
   primosInput?.addEventListener('input', onPlannerChange);
   fateInput?.addEventListener('input', onPlannerChange);
+  welkinInput?.addEventListener('change', onPlannerChange);
+  bpInput?.addEventListener('change', onPlannerChange);
 
   // Load any previously stored data on tab open
   const stored = loadStoredWishes();
