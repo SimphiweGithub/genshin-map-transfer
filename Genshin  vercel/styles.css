@@ -161,6 +161,11 @@ kbd {
 
 .icon-btn { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .icon-btn svg { width: 16px; height: 16px; }
+svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
+.rarity-stars { display: inline-flex; gap: 1px; align-items: center; }
+.rarity-stars svg { display: inline-block; }
+.resin-tip-icon svg { width: 16px; height: 16px; color: var(--gold-primary); }
+.ff-dot svg.ic { width: 10px; height: 10px; }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
 .app-header {

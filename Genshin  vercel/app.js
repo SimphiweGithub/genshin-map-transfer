@@ -18,6 +18,32 @@ function getElementSVG(element) {
   return `<img class="el-icon" src="${el.path}" alt="${element}" style="width:14px;height:14px;vertical-align:middle;filter:drop-shadow(0 0 2px rgba(0,0,0,0.5))">`;
 }
 
+const SVG = {
+  star4:  (s=16,c='currentColor') => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}"><path d="M8 0l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="${c}"/></svg>`,
+  star5:  (s=16,c='currentColor') => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}"><path d="M8 .5l2.2 4.5 5 .7-3.6 3.5.85 5L8 12l-4.45 2.2.85-5L.8 5.7l5-.7z" fill="${c}"/></svg>`,
+  target: (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/><line x1="8" y1="1" x2="8" y2="3.5"/><line x1="8" y1="12.5" x2="8" y2="15"/><line x1="1" y1="8" x2="3.5" y2="8"/><line x1="12.5" y1="8" x2="15" y2="8"/></svg>`,
+  dice:   (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1.5" y="1.5" width="13" height="13" rx="2"/><circle cx="5" cy="5" r="1.1" fill="currentColor"/><circle cx="11" cy="5" r="1.1" fill="currentColor"/><circle cx="8" cy="8" r="1.1" fill="currentColor"/><circle cx="5" cy="11" r="1.1" fill="currentColor"/><circle cx="11" cy="11" r="1.1" fill="currentColor"/></svg>`,
+  calc:   (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="1" width="12" height="14" rx="1.5"/><rect x="4" y="3" width="8" height="3" rx=".5" fill="currentColor" opacity=".15"/><circle cx="5.5" cy="9" r=".7" fill="currentColor"/><circle cx="8" cy="9" r=".7" fill="currentColor"/><circle cx="10.5" cy="9" r=".7" fill="currentColor"/><circle cx="5.5" cy="12" r=".7" fill="currentColor"/><circle cx="8" cy="12" r=".7" fill="currentColor"/><circle cx="10.5" cy="12" r=".7" fill="currentColor"/></svg>`,
+  chart:  (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.4"><line x1="2" y1="14" x2="14" y2="14"/><rect x="3" y="8" width="2.5" height="6" rx=".5" fill="currentColor" opacity=".3"/><rect x="6.75" y="4" width="2.5" height="10" rx=".5" fill="currentColor" opacity=".5"/><rect x="10.5" y="6" width="2.5" height="8" rx=".5" fill="currentColor" opacity=".7"/></svg>`,
+  card:   (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="1" width="12" height="14" rx="1.5"/><path d="M8 4l1.2 2.4 2.6.4-1.9 1.8.45 2.6L8 10l-2.35 1.2.45-2.6L4.2 6.8l2.6-.4z" fill="currentColor" opacity=".2"/></svg>`,
+  warn:   (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1.5L1.07 13.5h13.86z" stroke-linejoin="round"/><line x1="8" y1="6.5" x2="8" y2="9.5"/><circle cx="8" cy="11.5" r=".6" fill="currentColor" stroke="none"/></svg>`,
+  shield: (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1.5L2.5 4v4c0 3.5 2.5 5.5 5.5 6.5 3-1 5.5-3 5.5-6.5V4z"/><path d="M6 8l1.5 1.5L10.5 6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  gift:   (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1.5" y="6" width="13" height="8.5" rx="1"/><rect x="3" y="3.5" width="10" height="3" rx="1"/><line x1="8" y1="3.5" x2="8" y2="14.5"/><path d="M8 3.5C8 3.5 6 1 4.5 1.5S3 4 5 4" stroke-linecap="round"/><path d="M8 3.5c0 0 2-2.5 3.5-2s1.5 2.5-.5 2.5" stroke-linecap="round"/></svg>`,
+  moon:   (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M13.5 9.5A6 6 0 016.5 2.5 6 6 0 1013.5 9.5z"/></svg>`,
+  coin:   (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6.5"/><circle cx="8" cy="8" r="4" stroke-dasharray="2 2"/><line x1="7" y1="6" x2="7" y2="10.5" stroke-linecap="round"/><line x1="9" y1="5.5" x2="9" y2="10" stroke-linecap="round"/></svg>`,
+  clock:  (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><path d="M8 4v4.5l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  book:   (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 2.5h5c.55 0 1 .45 1 1v10l-1-.75L5.5 12H2.5a1 1 0 01-1-1V3.5a1 1 0 011-1z"/><path d="M14 2.5H9c-.55 0-1 .45-1 1v10l1-.75L10.5 12H13.5a1 1 0 001-1V3.5a1 1 0 00-1-1z"/></svg>`,
+  sword:  (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2l-5 5"/><path d="M10 7L7 10M5 8L2.5 10.5 4 12l1.5 1.5L8 11"/><line x1="14" y1="2" x2="10.5" y2="2"/><line x1="14" y1="2" x2="14" y2="5.5"/><line x1="2" y1="14" x2="4.5" y2="11.5"/></svg>`,
+  bulb:   (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.2"><line x1="6" y1="13" x2="10" y2="13"/><line x1="6.5" y1="14.5" x2="9.5" y2="14.5"/><path d="M5.5 10.5C4 9.5 3 7.7 3 5.7 3 3 5.24 1 8 1s5 2 5 4.7c0 2-1 3.8-2.5 4.8V12H5.5z"/><path d="M8 4.5v3M6.5 6.5h3" stroke-linecap="round"/></svg>`,
+  flask:  (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.2"><line x1="6" y1="1.5" x2="10" y2="1.5"/><path d="M6.5 1.5v4L2 13a1.5 1.5 0 001.3 2.3h9.4A1.5 1.5 0 0014 13L9.5 5.5v-4"/><line x1="4" y1="11" x2="12" y2="11" stroke-dasharray="1.5 1.5"/></svg>`,
+  people: (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="5.5" cy="4.5" r="2"/><path d="M1 13c0-2.5 2-4.5 4.5-4.5S10 10.5 10 13"/><circle cx="11" cy="5" r="1.7"/><path d="M14.5 13c0-2-1.5-3.5-3.5-3.5"/></svg>`,
+  check:  (s=14,c='currentColor') => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 5"/></svg>`,
+  x:      (s=14,c='currentColor') => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>`,
+  heartF: (s=12) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}"><path d="M8 14s-5.5-3.5-5.5-7.5C2.5 4 4 2.5 5.75 2.5 7 2.5 8 3.5 8 3.5S9 2.5 10.25 2.5C12 2.5 13.5 4 13.5 6.5 13.5 10.5 8 14 8 14z" fill="currentColor"/></svg>`,
+  heartE: (s=12) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M8 14s-5.5-3.5-5.5-7.5C2.5 4 4 2.5 5.75 2.5 7 2.5 8 3.5 8 3.5S9 2.5 10.25 2.5C12 2.5 13.5 4 13.5 6.5 13.5 10.5 8 14 8 14z"/></svg>`,
+  clip:   (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="2" width="10" height="13" rx="1.5"/><path d="M6 1h4a1 1 0 011 1v1H5V2a1 1 0 011-1z"/><line x1="5.5" y1="7" x2="10.5" y2="7"/><line x1="5.5" y1="9.5" x2="10.5" y2="9.5"/><line x1="5.5" y1="12" x2="8.5" y2="12"/></svg>`,
+};
+
 // Parse character name from avatar_side_icon URL
 // Handles multiple HoYoLAB URL formats:
 //   .../UI_AvatarIcon_Side_Amber.png
@@ -832,7 +858,7 @@ async function executeCheckinAPI() {
     saveLocalStorage();
     updateUI();
     playChime();
-    showBanner("🎁 Daily check-in claimed automatically! Check your in-game mail.", "success");
+    showBanner("Daily check-in claimed automatically! Check your in-game mail.", "success");
   } else if (result.retcode === -5003) {
     // Already checked in
     state.checkedInToday = true;
@@ -1083,14 +1109,14 @@ function appTimerLoop() {
   // the user always knows when data is stale because something is broken.
   if (state.connectionIssue) {
     const labels = {
-      auth:      '⚠ Cookies expired',
-      network:   '⚠ HoYoLAB unreachable',
-      privacy:   '⚠ Chronicle private',
-      geetest:   '⚠ Verification needed',
-      ratelimit: '⚠ Daily limit hit',
+      auth:      'Cookies expired',
+      network:   'HoYoLAB unreachable',
+      privacy:   'Chronicle private',
+      geetest:   'Verification needed',
+      ratelimit: 'Daily limit hit',
     };
     syncDot.className = 'sync-dot old';
-    syncLabel.innerText = labels[state.connectionIssue] || '⚠ Sync problem';
+    syncLabel.innerText = labels[state.connectionIssue] || 'Sync problem';
     if (nextSyncEl) nextSyncEl.innerText = '--:--';
   } else if (state.lastSyncTime === 0) {
     syncDot.className = 'sync-dot waiting';
@@ -1200,13 +1226,13 @@ function appTimerLoop() {
       state.resin.alert160Triggered = true;
       saveLocalStorage();
       playChime();
-      triggerPushNotification("🌙 Resin Cap Approaching!", "Your Genshin Impact resin has reached 160. Time to craft or spend!");
+      triggerPushNotification("Resin Cap Approaching!", "Your Genshin Impact resin has reached 160. Time to craft or spend!");
     }
     if (currentResin >= 200 && !state.resin.alert200Triggered && document.getElementById("resin-alert-200").checked) {
       state.resin.alert200Triggered = true;
       saveLocalStorage();
       playChime();
-      triggerPushNotification("🌙 Resin Cap Reached!", "Your resin is maxed out at 200/200! Go clear some domains or bosses!");
+      triggerPushNotification("Resin Cap Reached!", "Your resin is maxed out at 200/200! Go clear some domains or bosses!");
     }
   } else {
     // Resin is capped
@@ -1250,7 +1276,7 @@ function appTimerLoop() {
       state.currency.alertFullTriggered = true;
       saveLocalStorage();
       playChime();
-      triggerPushNotification("🪙 Serenitea Pot Alert!", "Your Realm Currency is fully loaded! Go collect it from Tubby.");
+      triggerPushNotification("Serenitea Pot Alert!", "Your Realm Currency is fully loaded! Go collect it from Tubby.");
     }
   } else {
     // Currency is full
@@ -1312,7 +1338,7 @@ function updateCustomTimersRealtime() {
       t.alertTriggered = true;
       saveLocalStorage();
       playChime();
-      triggerPushNotification("⏰ Farm Timer Completed!", `Farming node '${t.name}' is now ready for collection!`);
+      triggerPushNotification("Farm Timer Completed!", `Farming node '${t.name}' is now ready for collection!`);
     }
 
     const timerClass = isFinished ? "timer-card finished" : "timer-card";
@@ -1588,17 +1614,16 @@ function getCharDisplayName(char) {
   return char.name;
 }
 
-// Render ★ stars for a rarity level
 function rarityStars(n, color) {
-  return `<span style="color:${color || '#d4a017'};letter-spacing:1px;font-size:.85rem">${'★'.repeat(n)}</span>`;
+  const c = color || '#d4a017';
+  return `<span class="rarity-stars" style="color:${c}">${Array(n).fill(SVG.star4(11, c)).join('')}</span>`;
 }
 
-// Render ♥ hearts for friendship level (fetter 1-10)
 function friendshipHearts(n) {
   const filled = Math.min(10, n || 0);
   let h = '';
   for (let i = 0; i < 10; i++) {
-    h += `<span style="color:${i < filled ? '#e84a5f' : 'rgba(255,255,255,.15)'};font-size:.72rem">${i < filled ? '♥' : '♡'}</span>`;
+    h += `<span style="color:${i < filled ? '#e84a5f' : 'rgba(255,255,255,.15)'}">${i < filled ? SVG.heartF(11) : SVG.heartE(11)}</span>`;
   }
   return h;
 }
@@ -1915,7 +1940,7 @@ function renderResinAdvisor() {
       ).slice(0, 3);
       const minTalent = skills.length ? Math.min(...skills.map(s => s.level_current || s.level || 0)) : 10;
       if (minTalent < 8) {
-        tips.push(`<div class="resin-tip"><span class="resin-tip-icon">📖</span><span class="resin-tip-text">Farm <strong>${mat.name}</strong> for <strong>${name}</strong> (talents ${skills.map(s => s.level_current || s.level || 0).join('/')})</span></div>`);
+        tips.push(`<div class="resin-tip"><span class="resin-tip-icon">${SVG.book(16)}</span><span class="resin-tip-text">Farm <strong>${mat.name}</strong> for <strong>${name}</strong> (talents ${skills.map(s => s.level_current || s.level || 0).join('/')})</span></div>`);
       }
     }
   }
@@ -1926,7 +1951,7 @@ function renderResinAdvisor() {
     const d = state.characterDetails[c.id];
     if (!d || !d.weapon) continue;
     if ((d.weapon.level || 0) < 70 && c.rarity >= 5) {
-      tips.push(`<div class="resin-tip"><span class="resin-tip-icon">⚔️</span><span class="resin-tip-text">Level <strong>${getCharDisplayName(c)}</strong>'s weapon (Lv.${d.weapon.level} ${d.weapon.name})</span></div>`);
+      tips.push(`<div class="resin-tip"><span class="resin-tip-icon">${SVG.sword(16)}</span><span class="resin-tip-text">Level <strong>${getCharDisplayName(c)}</strong>'s weapon (Lv.${d.weapon.level} ${d.weapon.name})</span></div>`);
       if (tips.length >= 4) break;
     }
   }
@@ -2181,7 +2206,7 @@ async function syncWishHistory() {
     }
 
     const total = Object.values(stored.banners).reduce((s, a) => s + a.length, 0);
-    status.textContent = `✓ Sync complete — ${total.toLocaleString()} wishes stored.`;
+    status.textContent = `Sync complete — ${total.toLocaleString()} wishes stored.`;
     status.className = 'wish-sync-status success';
     renderWishUI(stored);
   } catch (err) {
@@ -2216,8 +2241,8 @@ function renderWishUI(data) {
     if (b.fiftyFifty) {
       const ff = analyzeFiftyFifty(wishes.filter(w => w.rank_type === '5'), b.fiftyFifty);
       guarBadge = ff.guaranteedNext
-        ? `<div class="pity-guarantee guaranteed">✓ Next 5★ guaranteed</div>`
-        : `<div class="pity-guarantee coinflip">⚄ Next 5★ is a 50/50</div>`;
+        ? `<div class="pity-guarantee guaranteed">${SVG.check(12,'#74c2a0')} Next 5${SVG.star4(10,'#d4a017')} guaranteed</div>`
+        : `<div class="pity-guarantee coinflip">${SVG.dice(12)} Next 5${SVG.star4(10,'#d4a017')} is a 50/50</div>`;
     }
     const toSoftLine = toSoft > 0
       ? `${toSoft} to soft pity`
@@ -2227,11 +2252,11 @@ function renderWishUI(data) {
       <div class="pity-card" style="--pity-color:${b.color}">
         <div class="pity-name">${b.name}</div>
         <div class="pity-count ${danger ? 'pity-danger' : ''}">${pity}</div>
-        <div class="pity-label">pulls since last ✦5</div>
+        <div class="pity-label">pulls since last ${SVG.star4(10,'#d4a017')}5</div>
         <div class="pity-bar"><div class="pity-fill" style="width:${pct}%;background:${b.color}"></div></div>
         <div class="pity-tosoft">${toSoftLine}</div>
         ${guarBadge}
-        <div class="pity-sub">${stats.total.toLocaleString()} total · ${stats.fiveStars} ✦5${stats.avgPity ? ` · avg pity ${stats.avgPity}` : ''}</div>
+        <div class="pity-sub">${stats.total.toLocaleString()} total · ${stats.fiveStars} ${SVG.star4(10,'#d4a017')}5${stats.avgPity ? ` · avg pity ${stats.avgPity}` : ''}</div>
       </div>`;
   }).join('');
 
@@ -2249,9 +2274,9 @@ function renderWishUI(data) {
     const fiveRate = total ? (five / total * 100).toFixed(2) : '—';
     document.getElementById('wish-stats-grid').innerHTML = [
       ['Total Wishes', total.toLocaleString()],
-      ['5★ Pulled', five],
-      ['4★ Pulled', four],
-      ['5★ Rate', `${fiveRate}%`],
+      ['5-Star Pulled', five],
+      ['4-Star Pulled', four],
+      ['5-Star Rate', `${fiveRate}%`],
       ['Primogems Spent (est.)', (total * 160).toLocaleString()],
     ].map(([l, v]) => `<div class="wish-stat-box"><span class="wish-stat-val">${v}</span><span class="wish-stat-lbl">${l}</span></div>`).join('');
   }
@@ -2306,7 +2331,7 @@ function renderFiftyFifty(data) {
     const strip = ff.history.slice(0, 14).map(h => {
       const cls = h.result === 'won' ? 'ff-won' : h.result === 'lost' ? 'ff-lost' : 'ff-guar';
       const tip = `${h.name} — ${h.result === 'guaranteed' ? 'guaranteed' : h.result + ' ' + flip}`;
-      const sym = h.result === 'won' ? '✓' : h.result === 'lost' ? '✕' : '★';
+      const sym = h.result === 'won' ? SVG.check(10,'#74c2a0') : h.result === 'lost' ? SVG.x(10,'#e84a5f') : SVG.star4(10,'#d4a017');
       return `<span class="ff-dot ${cls}" title="${tip}">${sym}</span>`;
     }).join('');
 
@@ -2321,7 +2346,7 @@ function renderFiftyFifty(data) {
           <div class="fifty-record"><span class="ff-w">${ff.wins}W</span> · <span class="ff-l">${ff.losses}L</span><br><span class="fifty-record-lbl">${ff.rolls} ${flip} rolls</span></div>
         </div>
         <div class="fifty-guar ${ff.guaranteedNext ? 'guaranteed' : 'coinflip'}">
-          ${ff.guaranteedNext ? '✓ Next 5★ guaranteed featured' : `⚄ Next 5★ is a ${flip}`}
+          ${ff.guaranteedNext ? `${SVG.check(12,'#74c2a0')} Next 5${SVG.star4(10,'#d4a017')} guaranteed featured` : `${SVG.dice(12)} Next 5${SVG.star4(10,'#d4a017')} is a ${flip}`}
         </div>
         <div class="fifty-luck">
           <span>Best <strong>${best ?? '—'}</strong></span>
@@ -2388,7 +2413,7 @@ function renderPlanner(data) {
         <span class="planner-row-detail">
           worst-case <strong>${worstGuarantee}</strong> pulls to guaranteed featured
           ${enough
-            ? `<span class="planner-ok">✓ you have enough</span>`
+            ? `<span class="planner-ok">${SVG.check(12,'#74c2a0')} you have enough</span>`
             : `<span class="planner-short">need ${short} more${dateStr ? ` · ready ${dateStr}` : ''}</span>`}
         </span>
       </div>`;
@@ -2427,14 +2452,14 @@ function renderPlanner(data) {
         bannerLine = `<br><span class="proj-label">Banner ends in ${bannerInfo.days}d:</span> ` +
           `<span class="proj-date">${pullsByEnd}</span> pulls by then` +
           (canGuarantee
-            ? ` <span style="color:#74c2a0">· ✓ can guarantee</span>`
+            ? ` <span style="color:#74c2a0">· ${SVG.check(12,'#74c2a0')} can guarantee</span>`
             : ` <span style="color:#e84a5f">· need ${worstGuarantee - pullsByEnd} more</span>`);
       }
     }
 
     proj.innerHTML = `
       <span class="proj-label">Daily income:</span> <span class="proj-rate">~${dailyPrimos} primos/day</span>
-      (${welkin ? 'Welkin ✓' : 'no Welkin'} · ${bp ? 'BP ✓' : 'no BP'})<br>
+      (${welkin ? `Welkin ${SVG.check(11,'#74c2a0')}` : 'no Welkin'} · ${bp ? `BP ${SVG.check(11,'#74c2a0')}` : 'no BP'})<br>
       <span class="proj-label">Projected pulls:</span>
       <span class="proj-date">${in7}</span> in 7 days ·
       <span class="proj-date">${in30}</span> in 30 days ·
@@ -2505,7 +2530,7 @@ function renderBannerCountdown() {
         <div class="banner-cd-info">
           <div class="banner-cd-name" style="color:${color}">${b.name}</div>
           <div class="banner-cd-type">${label}</div>
-          <div class="banner-cd-time">${urgent && remaining > 0 ? '⏰ ' : ''}Ends in ${timeStr}</div>
+          <div class="banner-cd-time">${urgent && remaining > 0 ? SVG.clock(13) + ' ' : ''}Ends in ${timeStr}</div>
         </div>
       </div>`;
   }).join('');
@@ -2539,7 +2564,7 @@ function renderWishList(data, filterType) {
   list.innerHTML = wishes.map(w => {
     const r = parseInt(w.rank_type);
     const col = r === 5 ? '#d4a017' : r === 4 ? '#9b59b6' : 'rgba(255,255,255,.4)';
-    const stars = '✦'.repeat(r);
+    const stars = Array(r).fill(SVG.star4(10, col)).join('');
     return `<div class="wish-item wish-r${r}">
       <span class="wish-stars" style="color:${col}">${stars}</span>
       <span class="wish-name">${w.name}</span>
@@ -2569,7 +2594,7 @@ function initWishTab() {
         const data = JSON.parse(ev.target.result);
         saveStoredWishes(data);
         renderWishUI(data);
-        document.getElementById('wish-sync-status').textContent = '✓ Import successful.';
+        document.getElementById('wish-sync-status').textContent = 'Import successful.';
         document.getElementById('wish-sync-status').className = 'wish-sync-status success';
         document.getElementById('wish-sync-status').classList.remove('hidden');
       } catch { alert('Invalid JSON file.'); }
@@ -2764,7 +2789,7 @@ function updateAbyssUI() {
       html += `
         <div class="abyss-floor-row" style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 6px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid rgba(255,255,255,0.02);">
           <span class="floor-name">Floor ${fl.index}</span>
-          <span class="floor-stars text-gold">✦ ${fl.star} / ${fl.max_star}</span>
+          <span class="floor-stars text-gold">${SVG.star4(11,'#d4a017')} ${fl.star} / ${fl.max_star}</span>
         </div>
       `;
     });
@@ -2807,7 +2832,7 @@ function updateLedgerUI() {
   if (!state.ledger) {
     container.innerHTML = `
       <p class="empty-text text-muted" style="margin-top: 15px; text-align: center; font-size: 0.85rem;">
-        ⚠️ No Ledger data available.<br><br>
+        ${SVG.warn(14)} No Ledger data available.<br><br>
         <span style="font-size: 0.75rem; display: block; line-height: 1.4; color: var(--text-muted); padding: 0 10px;">
           Note: HoYoverse's API server often blocks or times out requests originating from cloud hosting IP ranges (like Vercel serverless functions) for the Traveler's Diary API.
         </span>
@@ -2929,7 +2954,7 @@ function updateDomainSchedule(dayIndex) {
       if (matchingOwned.length > 0) {
         alertItemsHTML += `
           <div class="alert-item">
-            <span>💡 <strong>${t.name} Books</strong> are farmable today for your character${matchingOwned.length > 1 ? 's' : ''}: 
+            <span>${SVG.bulb(14)} <strong>${t.name} Books</strong> are farmable today for your character${matchingOwned.length > 1 ? 's' : ''}: 
             <strong class="text-gold">${matchingOwned.join(", ")}</strong>.</span>
           </div>
         `;

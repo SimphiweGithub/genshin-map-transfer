@@ -86,13 +86,13 @@ module.exports = async (req, res) => {
 
       if (n.current_resin >= n.max_resin) {
         alerts.push({
-          title: '\u{1F319} Resin CAPPED',
+          title: 'Resin CAPPED',
           description: `Resin is full at **${n.current_resin}/${n.max_resin}** — it's overflowing! Go spend it.`,
           color: 0xFF5E57
         });
       } else if (n.current_resin >= resinThreshold) {
         alerts.push({
-          title: '\u{1F319} Resin Approaching Cap',
+          title: 'Resin Approaching Cap',
           description: `Resin at **${n.current_resin}/${n.max_resin}**. Will cap soon!`,
           color: 0xECD073
         });
@@ -101,7 +101,7 @@ module.exports = async (req, res) => {
       const doneExps = (n.expeditions || []).filter(e => e.status === 'Finished');
       if (doneExps.length > 0) {
         alerts.push({
-          title: '\u{1F9ED} Expeditions Complete',
+          title: 'Expeditions Complete',
           description: `**${doneExps.length}** expedition(s) are done and waiting to be collected.`,
           color: 0x3CD5FF
         });
@@ -109,7 +109,7 @@ module.exports = async (req, res) => {
 
       if (n.current_home_coin >= n.max_home_coin) {
         alerts.push({
-          title: '\u{1FA99} Realm Currency Full',
+          title: 'Realm Currency Full',
           description: `Serenitea Pot at **${n.current_home_coin}/${n.max_home_coin}**. Collect from Tubby!`,
           color: 0xC3A647
         });
@@ -117,7 +117,7 @@ module.exports = async (req, res) => {
 
       if (n.transformer?.obtained && n.transformer.recovery_time?.reached) {
         alerts.push({
-          title: '⚗️ Parametric Transformer Ready',
+          title: 'Parametric Transformer Ready',
           description: 'Your Parametric Transformer cooldown is up — time to use it!',
           color: 0xAF83FF
         });
@@ -125,7 +125,7 @@ module.exports = async (req, res) => {
 
       if (n.finished_task_num === n.total_task_num && !n.is_extra_task_reward_received) {
         alerts.push({
-          title: '\u{1F4CB} Claim Your Katheryne Reward',
+          title: 'Claim Your Katheryne Reward',
           description: `All **${n.total_task_num}** daily commissions done, but you haven't collected from Katheryne yet.`,
           color: 0x3CD5FF
         });
@@ -159,7 +159,7 @@ module.exports = async (req, res) => {
       if (sign.retcode === 0 || sign.retcode === -5003) {
         log.push('Check-in: claimed automatically');
         alerts.push({
-          title: '✅ Daily Check-in Claimed',
+          title: 'Daily Check-in Claimed',
           description: `Today's HoYoLAB check-in reward was claimed automatically. Day **${status.data.total_sign_day + 1}** of this month.`,
           color: 0x2ECC71
         });
@@ -213,9 +213,9 @@ module.exports = async (req, res) => {
       if (d.retcode === 0) {
         const remaining = d.data.remain_resin_discount_num;
         if (remaining > 0 && srvDay === 0) {
-          bossLine = `\n⚔️ **${remaining} boss discount${remaining > 1 ? 's' : ''} left** — weekly reset is tomorrow!`;
+          bossLine = `\n**${remaining} boss discount${remaining > 1 ? 's' : ''} left** — weekly reset is tomorrow!`;
           alerts.push({
-            title: '⚔️ Weekly Boss Discounts Expiring',
+            title: 'Weekly Boss Discounts Expiring',
             description: `You have **${remaining}** half-cost boss discount${remaining > 1 ? 's' : ''} remaining and weekly reset is tomorrow. Don't let them go to waste!`,
             color: 0xE67E22
           });
@@ -224,8 +224,8 @@ module.exports = async (req, res) => {
     } catch (_) {}
 
     alerts.push({
-      title: `\u{1F4CB} Daily Briefing — ${dayNames[srvDay]}`,
-      description: `**Today's Talent Books:**\n${bookLines || 'All books available (Sunday)'}${bossLine}\n\n\u{1F319} Check your resin and expeditions!`,
+      title: `Daily Briefing — ${dayNames[srvDay]}`,
+      description: `**Today's Talent Books:**\n${bookLines || 'All books available (Sunday)'}${bossLine}\n\nCheck your resin and expeditions!`,
       color: 0x3CD5FF
     });
     log.push('Daily briefing generated');
