@@ -7,24 +7,43 @@ function generateDS(salt = '6s25p5ox5y14umn1p61aqyyvbvvl3lrt') {
   return `${t},${r},${sign}`;
 }
 
-async function hoyo(url, extraHeaders = {}) {
-  const headers = {
-    'Cookie': `ltoken_v2=${process.env.HOYO_LTOKEN}; ltuid_v2=${process.env.HOYO_LTUID}; ltoken=${process.env.HOYO_LTOKEN}; ltuid=${process.env.HOYO_LTUID};`,
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
-    'Referer': 'https://act.hoyolab.com/',
-    'x-rpc-app_version': '2.34.1',
-    'x-rpc-client_type': '4',
-    'DS': generateDS(),
-    ...extraHeaders
-  };
-  const r = await fetch(url, { headers });
-  return r.json();
+async function loadConfig() {
+  const kvUrl = process.env.KV_REST_API_URL;
+  const kvToken = process.env.KV_REST_API_TOKEN;
+  if (!kvUrl || !kvToken) return null;
+
+  const r = await fetch(kvUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${kvToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(['GET', 'teyvat_config'])
+  });
+  const data = await r.json();
+  if (!data.result) return null;
+  return JSON.parse(data.result);
 }
 
-async function discord(embeds) {
-  const url = process.env.DISCORD_WEBHOOK_URL;
-  if (!url || !embeds.length) return;
-  await fetch(url, {
+function makeHoyoFetcher(ltoken, ltuid) {
+  return async (url, extraHeaders = {}) => {
+    const headers = {
+      'Cookie': `ltoken_v2=${ltoken}; ltuid_v2=${ltuid}; ltoken=${ltoken}; ltuid=${ltuid};`,
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+      'Referer': 'https://act.hoyolab.com/',
+      'x-rpc-app_version': '2.34.1',
+      'x-rpc-client_type': '4',
+      'DS': generateDS(),
+      ...extraHeaders
+    };
+    const r = await fetch(url, { headers });
+    return r.json();
+  };
+}
+
+async function discord(webhookUrl, embeds) {
+  if (!webhookUrl || !embeds.length) return;
+  await fetch(webhookUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username: 'Teyvat Chrono', embeds })
@@ -32,19 +51,23 @@ async function discord(embeds) {
 }
 
 module.exports = async (req, res) => {
-  // Verify this is a legitimate Vercel cron call
   const authHeader = req.headers['authorization'];
   if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const uid    = process.env.HOYO_UID;
-  const server = process.env.HOYO_SERVER || 'os_asia';
-  const resinThreshold = parseInt(process.env.RESIN_THRESHOLD) || 155;
-
-  if (!uid || !process.env.HOYO_LTOKEN || !process.env.HOYO_LTUID) {
-    return res.status(400).json({ error: 'Set HOYO_UID, HOYO_LTOKEN, HOYO_LTUID in Vercel environment variables.' });
+  const config = await loadConfig();
+  if (!config || !config.uid || !config.ltoken || !config.ltuid) {
+    return res.status(400).json({
+      error: 'No credentials found. Save your credentials in the Teyvat Chrono dashboard Settings modal — they sync to the server automatically.'
+    });
   }
+
+  const { uid, server: srv, ltoken, ltuid } = config;
+  const server = srv || 'os_euro';
+  const webhookUrl = config.discordWebhook || process.env.DISCORD_WEBHOOK_URL;
+  const resinThreshold = parseInt(process.env.RESIN_THRESHOLD) || 155;
+  const hoyo = makeHoyoFetcher(ltoken, ltuid);
 
   const alerts = [];
   const log    = [];
@@ -61,41 +84,37 @@ module.exports = async (req, res) => {
       const n = d.data;
       log.push(`Resin ${n.current_resin}/${n.max_resin} | Coins ${n.current_home_coin}/${n.max_home_coin}`);
 
-      // Resin cap / approaching cap
       if (n.current_resin >= n.max_resin) {
         alerts.push({
-          title: '🌙 Resin CAPPED',
+          title: '\u{1F319} Resin CAPPED',
           description: `Resin is full at **${n.current_resin}/${n.max_resin}** — it's overflowing! Go spend it.`,
           color: 0xFF5E57
         });
       } else if (n.current_resin >= resinThreshold) {
         alerts.push({
-          title: '🌙 Resin Approaching Cap',
+          title: '\u{1F319} Resin Approaching Cap',
           description: `Resin at **${n.current_resin}/${n.max_resin}**. Will cap soon!`,
           color: 0xECD073
         });
       }
 
-      // Expeditions finished
       const doneExps = (n.expeditions || []).filter(e => e.status === 'Finished');
       if (doneExps.length > 0) {
         alerts.push({
-          title: '🧭 Expeditions Complete',
+          title: '\u{1F9ED} Expeditions Complete',
           description: `**${doneExps.length}** expedition(s) are done and waiting to be collected.`,
           color: 0x3CD5FF
         });
       }
 
-      // Realm currency full
       if (n.current_home_coin >= n.max_home_coin) {
         alerts.push({
-          title: '🪙 Realm Currency Full',
+          title: '\u{1FA99} Realm Currency Full',
           description: `Serenitea Pot at **${n.current_home_coin}/${n.max_home_coin}**. Collect from Tubby!`,
           color: 0xC3A647
         });
       }
 
-      // Parametric Transformer ready
       if (n.transformer?.obtained && n.transformer.recovery_time?.reached) {
         alerts.push({
           title: '⚗️ Parametric Transformer Ready',
@@ -104,10 +123,9 @@ module.exports = async (req, res) => {
         });
       }
 
-      // Commissions done but Katheryne reward unclaimed
       if (n.finished_task_num === n.total_task_num && !n.is_extra_task_reward_received) {
         alerts.push({
-          title: '📋 Claim Your Katheryne Reward',
+          title: '\u{1F4CB} Claim Your Katheryne Reward',
           description: `All **${n.total_task_num}** daily commissions done, but you haven't collected from Katheryne yet.`,
           color: 0x3CD5FF
         });
@@ -126,7 +144,7 @@ module.exports = async (req, res) => {
     if (status.retcode === 0 && !status.data.is_sign) {
       const postBody = JSON.stringify({ act_id: 'e202102251931481' });
       const headers = {
-        'Cookie': `ltoken_v2=${process.env.HOYO_LTOKEN}; ltuid_v2=${process.env.HOYO_LTUID}; ltoken=${process.env.HOYO_LTOKEN}; ltuid=${process.env.HOYO_LTUID};`,
+        'Cookie': `ltoken_v2=${ltoken}; ltuid_v2=${ltuid}; ltoken=${ltoken}; ltuid=${ltuid};`,
         'User-Agent': 'Mozilla/5.0',
         'Referer': 'https://act.hoyolab.com/',
         'x-rpc-app_version': '2.34.1',
@@ -178,7 +196,6 @@ module.exports = async (req, res) => {
       { name: "Conflict",   location: "Natlan",     days: [3, 6, 0], chars: ["Xilonen", "Citlali"] },
     ];
 
-    // Use server timezone for "today"
     const SERVER_OFFSETS = { os_usa: -5, os_euro: 1, os_asia: 8, os_cht: 8 };
     const srvOffset = SERVER_OFFSETS[server] || 1;
     const srvNow = new Date(Date.now() + srvOffset * 3600000 + new Date().getTimezoneOffset() * 60000);
@@ -188,8 +205,6 @@ module.exports = async (req, res) => {
     const todayBooks = DOMAIN_TALENTS.filter(t => t.days.includes(srvDay));
     const bookLines = todayBooks.map(t => `• **${t.name}** (${t.location}) — ${t.chars.slice(0, 4).join(', ')}`).join('\n');
 
-    // Weekly boss reminder — Sunday (day before Monday reset)
-    // We already have daily notes data from step 1
     let bossLine = '';
     try {
       const d = await hoyo(
@@ -209,8 +224,8 @@ module.exports = async (req, res) => {
     } catch (_) {}
 
     alerts.push({
-      title: `📋 Daily Briefing — ${dayNames[srvDay]}`,
-      description: `**Today's Talent Books:**\n${bookLines || 'All books available (Sunday)'}${bossLine}\n\n🌙 Check your resin and expeditions!`,
+      title: `\u{1F4CB} Daily Briefing — ${dayNames[srvDay]}`,
+      description: `**Today's Talent Books:**\n${bookLines || 'All books available (Sunday)'}${bossLine}\n\n\u{1F319} Check your resin and expeditions!`,
       color: 0x3CD5FF
     });
     log.push('Daily briefing generated');
@@ -220,7 +235,7 @@ module.exports = async (req, res) => {
 
   // ── 4. Send Discord alerts ──────────────────────────────────────────────────
   try {
-    await discord(alerts);
+    await discord(webhookUrl, alerts);
     if (alerts.length) log.push(`Sent ${alerts.length} Discord alert(s)`);
   } catch (e) {
     log.push(`Discord error: ${e.message}`);

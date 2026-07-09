@@ -421,21 +421,46 @@ function requestNotificationPermission() {
 // Handle settings configuration save
 function handleCredentialsSave(e) {
   e.preventDefault();
-  
+
   state.uid = document.getElementById("uid-input").value.trim();
   state.server = document.getElementById("server-input").value;
   state.ltoken = document.getElementById("ltoken-input").value.trim();
   state.ltuid = document.getElementById("ltuid-input").value.trim();
   state.discordWebhook = document.getElementById("discord-webhook-input").value.trim();
-  
+
   saveLocalStorage();
   requestNotificationPermission();
-  
+
   closeSettingsModal();
-  showBanner("Credentials saved successfully! Fetching data...", "success");
-  
-  // Fetch details instantly
+  showBanner("Credentials saved! Syncing to server...", "success");
+
+  syncConfigToServer();
   handleRefresh();
+}
+
+async function syncConfigToServer() {
+  if (!state.uid || !state.ltoken || !state.ltuid) return;
+  try {
+    const r = await fetch('/api/save-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        uid: state.uid,
+        server: state.server,
+        ltoken: state.ltoken,
+        ltuid: state.ltuid,
+        discordWebhook: state.discordWebhook || ''
+      })
+    });
+    const data = await r.json();
+    if (data.ok) {
+      showBanner("Credentials synced to server — Discord alerts & cron active!", "success");
+    } else {
+      showBanner("Server sync failed: " + (data.error || "unknown error"), "error");
+    }
+  } catch (err) {
+    showBanner("Server sync failed: " + err.message, "error");
+  }
 }
 
 // Handle clearing stored credentials
