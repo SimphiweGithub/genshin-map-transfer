@@ -3016,6 +3016,13 @@ async function renderMetaTab() {
     }
   });
 
+  const scrapedIcons = {};
+  if (metaData.roles) {
+    Object.values(metaData.roles).forEach(arr => {
+      arr.forEach(c => { if(c.iconUrl) scrapedIcons[c.name] = c.iconUrl; });
+    });
+  }
+
   let totalSlots = 0;
   let builtSlots = 0;
   
@@ -3032,7 +3039,7 @@ async function renderMetaTab() {
     // Core
     team.core.forEach(charName => {
       totalSlots++;
-      const res = evaluateCharForMeta(charName, ownedChars);
+      const res = evaluateCharForMeta(charName, ownedChars, scrapedIcons);
       if (res.built) builtSlots++;
       
       // Track for priority
@@ -3097,7 +3104,7 @@ async function renderMetaTab() {
       if(!roleArray) return;
       // Filter out B tier if any made it through (they shouldn't have) and show all
       roleArray.filter(c => ['S+', 'S', 'A'].includes(c.tier)).forEach(char => {
-        const res = evaluateCharForMeta(char.name, ownedChars);
+        const res = evaluateCharForMeta(char.name, ownedChars, scrapedIcons);
         const iconToUse = res.icon || char.iconUrl || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
         container.innerHTML += `
           <div class="meta-role-item ${res.status}" title="${char.name} - ${res.statusText}">
@@ -3117,11 +3124,11 @@ async function renderMetaTab() {
   }
 }
 
-function evaluateCharForMeta(charName, ownedCharsMap) {
+function evaluateCharForMeta(charName, ownedCharsMap, iconMap = {}) {
   const BUILD_THRESHOLDS = { level: 80, keyTalent: 8 }; // Re-declare since we deleted metaData.js
   const c = ownedCharsMap[charName.toLowerCase()];
   if (!c) {
-    return { status: "missing", built: false, statusText: "Not Owned", icon: "" };
+    return { status: "missing", built: false, statusText: "Not Owned", icon: iconMap[charName] || "" };
   }
   
   // Found character. Check details if available.
