@@ -29,7 +29,11 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const { action, uid, server, ltoken, ltuid, schedule_type, character_id, character_ids } = req.query;
+  // Accept POST body (credentials not exposed in URL logs) or GET query (legacy)
+  const params = req.method === 'POST'
+    ? (typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {}))
+    : req.query;
+  const { action, uid, server, ltoken, ltuid, schedule_type, character_id, character_ids } = params;
 
   if (!action) {
     return res.status(400).json({ retcode: -1, message: 'Missing parameter: action is required' });

@@ -1,5 +1,10 @@
 // Teyvat Chrono Dashboard Controller Logic
 
+// Escape HTML special characters before inserting API/user data into innerHTML
+function esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 // Official element SVG paths extracted from genshin-optimizer (frzyc/genshin-optimizer, MIT)
 const ELEMENT_ICONS = {
   Pyro:    { color: "#ef7027", path: "https://gi.yatta.moe/assets/UI/UI_Buff_Element_Fire.png" },
@@ -509,19 +514,20 @@ function handleClearCredentials() {
   }
 }
 
-// Fetch proxy wrapper helper
+// Fetch proxy wrapper helper — credentials sent in POST body, not URL query params
 async function fetchHoyolabAPI(action, extraParams = {}) {
-  const baseUrl = "/api/hoyolab";
-  const params = new URLSearchParams({
-    action,
-    uid: state.uid,
-    server: state.server,
-    ltoken: state.ltoken,
-    ltuid: state.ltuid,
-    ...extraParams
+  const response = await fetch('/api/hoyolab', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action,
+      uid: state.uid,
+      server: state.server,
+      ltoken: state.ltoken,
+      ltuid: state.ltuid,
+      ...extraParams
+    })
   });
-
-  const response = await fetch(`${baseUrl}?${params.toString()}`);
   if (!response.ok) {
     let msg = `HTTP ${response.status}`;
     try { const j = await response.json(); msg = j.message || msg; } catch (_) {}
@@ -584,17 +590,12 @@ async function handleTestConnection() {
   }
 
   try {
-    // Make a test query to check dailyNote
-    const baseUrl = "/api/hoyolab";
-    const params = new URLSearchParams({
-      action: "dailyNote",
-      uid,
-      server,
-      ltoken,
-      ltuid
+    // Make a test query to check dailyNote — credentials in POST body, not URL
+    const response = await fetch('/api/hoyolab', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'dailyNote', uid, server, ltoken, ltuid })
     });
-    
-    const response = await fetch(`${baseUrl}?${params.toString()}`);
     const data = await response.json();
 
     if (data.retcode !== 0) {
@@ -784,13 +785,16 @@ async function handleRefresh() {
   if (state.characters && state.characters.length > 0) {
     try {
       const ids = state.characters.map(c => c.id).join(',');
-      const qs = new URLSearchParams({
-        action: 'characterDetail',
-        uid: state.uid, server: state.server,
-        ltoken: state.ltoken, ltuid: state.ltuid,
-        character_ids: ids
+      const detailResp = await fetch('/api/hoyolab', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'characterDetail',
+          uid: state.uid, server: state.server,
+          ltoken: state.ltoken, ltuid: state.ltuid,
+          character_ids: ids
+        })
       });
-      const detailResp = await fetch(`/api/hoyolab?${qs}`);
       const detailData = await detailResp.json();
       if (detailData.retcode === 0 && detailData.data?.list) {
         state.characterDetails = {};
@@ -1348,8 +1352,8 @@ function updateCustomTimersRealtime() {
     html += `
       <div class="${timerClass}">
         <div class="timer-info">
-          <span class="timer-title">${t.name}</span>
-          <span class="timer-desc">${desc}</span>
+          <span class="timer-title">${esc(t.name)}</span>
+          <span class="timer-desc">${esc(desc)}</span>
         </div>
         <div class="timer-countdown ${isFinished ? 'text-green' : 'text-cyan'}">${displayTime}</div>
         <button class="timer-btn-delete" onclick="deleteTimer('${t.id}')">&times;</button>
@@ -1377,7 +1381,10 @@ function updateExpeditionsRealtime() {
     const remaining = Math.max(0, ex.remSec - elapsedSeconds);
     const isFinished = remaining === 0;
 
-    const fillPct = isFinished ? 100 : Math.min(100, Math.floor((1 - remaining / 72000) * 100)); // standard 20h expedition is 72000s
+    // Infer expedition total duration from remSec at sync time (smallest standard that fits)
+    const STD_DURATIONS = [14400, 28800, 43200, 72000]; // 4h 8h 12h 20h
+    const totalDuration = STD_DURATIONS.find(d => ex.remSec <= d) || 72000;
+    const fillPct = isFinished ? 100 : Math.min(100, Math.floor((1 - remaining / totalDuration) * 100));
 
     const imgUrl = (ex.avatar && ex.avatar.startsWith('http')) ? ex.avatar : 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
 
@@ -1531,8 +1538,8 @@ function updatePromoCodesUI() {
       <div class="code-row${claimedClass}">
         <div class="code-inner">
           <div class="code-left">
-            <span class="code-key">${c.code}</span>
-            <span class="code-reward-line">${formatReward(c.reward)}</span>
+            <span class="code-key">${esc(c.code)}</span>
+            <span class="code-reward-line">${formatReward(esc(c.reward))}</span>
           </div>
           <div class="code-action-col">
             ${c.redeemed
@@ -1658,7 +1665,7 @@ window.showCharDetail = function(idx) {
   document.getElementById('char-detail-el-badge').style.cssText =
     `background:${elCol}22;border:1px solid ${elCol}55;border-radius:50%;padding:5px;display:flex`;
   document.getElementById('char-detail-el-label').innerHTML =
-    `<span style="color:${elCol};font-size:.75rem;text-transform:uppercase;letter-spacing:1px">${char.element || ''}</span>`;
+    `<span style="color:${elCol};font-size:.75rem;text-transform:uppercase;letter-spacing:1px">${esc(char.element || '')}</span>`;
 
   // Name + modal top border
   document.getElementById('char-detail-name').innerText = name;
@@ -1692,13 +1699,16 @@ window.showCharDetail = function(idx) {
     renderCharWeapon(wpnRow, cached.weapon);
     renderCharArtifacts(slots, setBonuses, cached.relics || []);
   } else if (state.uid && state.server && state.ltoken && state.ltuid) {
-    const qs = new URLSearchParams({
-      action: 'characterDetail',
-      uid: state.uid, server: state.server,
-      ltoken: state.ltoken, ltuid: state.ltuid,
-      character_id: char.id
-    });
-    fetch(`/api/hoyolab?${qs}`)
+    fetch('/api/hoyolab', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'characterDetail',
+        uid: state.uid, server: state.server,
+        ltoken: state.ltoken, ltuid: state.ltuid,
+        character_id: char.id
+      })
+    })
       .then(r => r.json())
       .then(resp => {
         const detail = (resp.data?.list || [])[0];
@@ -1724,14 +1734,14 @@ function renderCharWeapon(wpnRow, w) {
   if (!w || !w.name) { wpnRow.innerHTML = `<p class="empty-text">No weapon data</p>`; return; }
   const wpnStars = rarityStars(w.rarity, w.rarity >= 5 ? '#d4a017' : '#9b59b6');
   const wpnIcon  = w.icon
-    ? `<img src="${w.icon}" class="char-detail-wpn-icon" alt="${w.name}" onerror="this.style.display='none'">`
+    ? `<img src="${w.icon}" class="char-detail-wpn-icon" alt="${esc(w.name)}" onerror="this.style.display='none'">`
     : '';
   wpnRow.innerHTML = `
     <div class="char-wpn-card">
       ${wpnIcon}
       <div class="char-wpn-info">
-        <span class="char-wpn-name">${w.name}</span>
-        <span class="char-wpn-sub">${w.type_name || ''} · Lv.${w.level} · R${w.affix_level || 1}</span>
+        <span class="char-wpn-name">${esc(w.name)}</span>
+        <span class="char-wpn-sub">${esc(w.type_name || '')} · Lv.${w.level} · R${w.affix_level || 1}</span>
         <span>${wpnStars}</span>
       </div>
     </div>`;
@@ -1752,7 +1762,7 @@ function renderCharArtifacts(slots, setBonuses, relics) {
     const r = slotMap[pos];
     if (r) {
       slotsHtml += `
-        <div class="char-artifact-slot filled" title="${r.name || ''} — ${r.set?.name || ''}" style="border-color:${r.rarity >= 5 ? '#d4a01755' : '#9b59b655'}">
+        <div class="char-artifact-slot filled" title="${esc(r.name || '')} — ${esc(r.set?.name || '')}" style="border-color:${r.rarity >= 5 ? '#d4a01755' : '#9b59b655'}">
           ${r.icon ? `<img src="${r.icon}" alt="${POS_NAMES[pos]}" onerror="this.style.display='none'">` : `<span class="slot-label">${POS_NAMES[pos]}</span>`}
           <span class="artifact-slot-level">+${r.level}</span>
         </div>`;
@@ -1770,7 +1780,7 @@ function renderCharArtifacts(slots, setBonuses, relics) {
   let bonusHtml = '';
   Object.entries(setCounts).forEach(([setName, cnt]) => {
     const pc = cnt >= 4 ? '4pc' : cnt >= 2 ? '2pc' : `${cnt}pc`;
-    bonusHtml += `<span class="set-bonus-chip"><span class="set-pc">${pc}</span> ${setName}</span>`;
+    bonusHtml += `<span class="set-bonus-chip"><span class="set-pc">${pc}</span> ${esc(setName)}</span>`;
   });
   setBonuses.innerHTML = bonusHtml;
 }
@@ -1797,7 +1807,7 @@ function renderCharTalents(container, skills) {
       <div class="talent-pill">
         ${icon}
         <div class="talent-info">
-          <span class="talent-name" title="${s.name || ''}">${s.name || 'Talent'}</span>
+          <span class="talent-name" title="${esc(s.name || '')}">${esc(s.name || 'Talent')}</span>
           <span class="talent-level ${cls}">Lv. ${lvl}</span>
         </div>
       </div>`;
@@ -1874,6 +1884,21 @@ function renderBuildPriorities() {
     // Weight 5-star characters higher
     if (c.rarity >= 5) score = Math.ceil(score * 1.2);
 
+    // Meta-team boost: surface owned-but-unbuilt meta characters above generic ones
+    if (window._metaCharScores) {
+      const displayName = getCharDisplayName(c).toLowerCase();
+      const metaEntry = Object.values(window._metaCharScores).find(
+        m => m.name.toLowerCase() === displayName || m.name.toLowerCase() === (c.name || '').toLowerCase()
+      );
+      if (metaEntry && metaEntry.unbuilt) {
+        score = Math.ceil(score * 1.5) + metaEntry.score * 10;
+        const teamLabel = metaEntry.teams.length ? metaEntry.teams[0].tier + ' Team' : 'Meta Core';
+        const builtIdx = tags.findIndex(t => t.cls === 'ok');
+        if (builtIdx >= 0) tags.splice(builtIdx, 1, { text: teamLabel, cls: 'meta' });
+        else tags.push({ text: teamLabel, cls: 'meta' });
+      }
+    }
+
     return { char: c, tags, score };
   });
 
@@ -1898,10 +1923,10 @@ function renderBuildPriorities() {
     const tagsHtml = r.tags.map(t => `<span class="build-tag ${t.cls}">${t.text}</span>`).join('');
     const i = idx(c);
     return `
-      <div class="build-row" onclick="showCharDetail(${i})" title="Click to see ${name}'s details">
-        <img class="build-row-avatar" src="${avatarUrl}" alt="${name}" onerror="this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
+      <div class="build-row" onclick="showCharDetail(${i})" title="Click to see ${esc(name)}'s details">
+        <img class="build-row-avatar" src="${avatarUrl}" alt="${esc(name)}" onerror="this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
         <div class="build-row-info">
-          <span class="build-row-name">${name}</span>
+          <span class="build-row-name">${esc(name)}</span>
           <div class="build-row-tags">${tagsHtml}</div>
         </div>
         <span class="build-row-score ${scoreCls}">${r.score}</span>
@@ -2567,10 +2592,10 @@ function renderWishList(data, filterType) {
     const stars = Array(r).fill(SVG.star4(10, col)).join('');
     return `<div class="wish-item wish-r${r}">
       <span class="wish-stars" style="color:${col}">${stars}</span>
-      <span class="wish-name">${w.name}</span>
-      <span class="wish-type">${w.item_type}</span>
-      <span class="wish-banner-tag" style="color:${banner(w._banner).color || '#aaa'}">${banner(w._banner).name || ''}</span>
-      <span class="wish-date">${w.time?.slice(0, 10) || ''}</span>
+      <span class="wish-name">${esc(w.name)}</span>
+      <span class="wish-type">${esc(w.item_type)}</span>
+      <span class="wish-banner-tag" style="color:${banner(w._banner).color || '#aaa'}">${esc(banner(w._banner).name || '')}</span>
+      <span class="wish-date">${esc(w.time?.slice(0, 10) || '')}</span>
     </div>`;
   }).join('');
 }
@@ -2671,12 +2696,12 @@ function updateCharactersCatalogUI() {
     const displayName = getCharDisplayName(char);
 
     html += `
-      <div class="char-card rarity-${char.rarity}" data-element="${char.element}" onclick="showCharDetail(${idx})" title="${displayName}">
+      <div class="char-card rarity-${char.rarity}" data-element="${esc(char.element)}" onclick="showCharDetail(${idx})" title="${esc(displayName)}">
         <div class="char-element-badge">${getElementSVG(char.element)}</div>
         <div class="char-thumb">
-          <img src="${char.image}" alt="${displayName}" onerror="this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
+          <img src="${char.image}" alt="${esc(displayName)}" onerror="this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
         </div>
-        <span class="char-name">${displayName}</span>
+        <span class="char-name">${esc(displayName)}</span>
         <div class="char-meta">
           <span class="char-level">Lv. ${char.level}</span>
           <span class="char-const">${constellationText}</span>
@@ -3043,11 +3068,12 @@ async function renderMetaTab() {
       if (res.built) builtSlots++;
       
       // Track for priority
-      if (!charScores[charName]) charScores[charName] = { name: charName, score: 0, reason: "", missing: false, unbuilt: false, icon: "" };
+      if (!charScores[charName]) charScores[charName] = { name: charName, score: 0, reason: "", missing: false, unbuilt: false, icon: "", teams: [] };
       charScores[charName].score += (res.status === 'missing' ? 2 : (res.status === 'owned-unbuilt' ? 3 : 0));
       if (res.status === 'missing') charScores[charName].missing = true;
       if (res.status === 'owned-unbuilt') charScores[charName].unbuilt = true;
       if (res.icon) charScores[charName].icon = res.icon;
+      if (res.status !== 'owned-built') charScores[charName].teams.push({ name: team.name, tier: team.tier });
 
       html += `<div class="meta-char-slot ${res.status}" title="${charName} - ${res.statusText}">
                  <img src="${res.icon || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'}" alt="${charName}">
@@ -3058,6 +3084,9 @@ async function renderMetaTab() {
     card.innerHTML = html;
     grid.appendChild(card);
   });
+
+  window._metaCharScores = charScores;
+  renderBuildPriorities();
 
   // Calculate Alignment
   const alignmentPercent = totalSlots > 0 ? Math.round((builtSlots / totalSlots) * 100) : 0;

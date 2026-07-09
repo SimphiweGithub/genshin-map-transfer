@@ -22,7 +22,11 @@ async function loadConfig() {
   });
   const data = await r.json();
   if (!data.result) return null;
-  return JSON.parse(data.result);
+  try {
+    return JSON.parse(data.result);
+  } catch (_) {
+    return null;
+  }
 }
 
 function makeHoyoFetcher(ltoken, ltuid) {
@@ -52,7 +56,8 @@ async function discord(webhookUrl, embeds) {
 
 module.exports = async (req, res) => {
   const authHeader = req.headers['authorization'];
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  // Fail closed: if CRON_SECRET is not configured, block all access
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

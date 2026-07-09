@@ -1671,6 +1671,7 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 }
 .build-tag.warn { background: rgba(200,160,64,.12); color: #c8a040; }
 .build-tag.ok { background: rgba(116,194,160,.12); color: #74c2a0; }
+.build-tag.meta { background: rgba(160,100,220,.15); color: #b07fe0; font-weight: 600; }
 .build-row-score {
   font-size: .9rem; font-weight: 700; min-width: 36px;
   text-align: center; color: rgba(255,255,255,.4);
