@@ -2997,6 +2997,7 @@ function updateDomainSchedule(dayIndex) {
 
 // --- META TRACKER LOGIC ---
 let cachedLiveRoles = null;
+let cachedMetaTeams = null;
 
 // Aggregate icy-veins roles into per-character meta data and compute build roadmap
 function buildMetaRoadmap(roles, ownedCharsMap) {
@@ -3047,43 +3048,118 @@ function buildMetaRoadmap(roles, ownedCharsMap) {
 }
 
 function renderMetaTierTable(container, roles, ownedCharsMap) {
-  const TIERS = ['S+', 'S', 'A'];
-  const TIER_CLS = { 'S+': 't-splus', 'S': 't-s', 'A': 't-a', 'B': 't-b' };
+  const TIERS = [
+    { tier: 'S+', cls: 't-splus', label: 'Top Meta' },
+    { tier: 'S',  cls: 't-s',     label: 'Strong Picks' },
+    { tier: 'A',  cls: 't-a',     label: 'Solid Choices' }
+  ];
   const ROLE_COLS = ['Main DPS', 'Sub DPS', 'Support'];
+  const tierCls = t => t === 'S+' ? 't-splus' : t === 'S' ? 't-s' : 't-a';
 
-  // Build tier × role matrix
   const matrix = {};
-  TIERS.forEach(t => { matrix[t] = {}; ROLE_COLS.forEach(r => matrix[t][r] = []); });
+  TIERS.forEach(({ tier }) => { matrix[tier] = {}; ROLE_COLS.forEach(r => matrix[tier][r] = []); });
   ROLE_COLS.forEach(role => {
     (roles[role] || []).forEach(c => { if (matrix[c.tier]) matrix[c.tier][role].push(c); });
   });
 
-  let html = `<div class="meta-tier-wrap"><div class="meta-tier-grid">`;
-  // Column headers
-  html += `<div class="meta-tier-col-header"></div>`;
-  ROLE_COLS.forEach(r => html += `<div class="meta-tier-col-header">${r}</div>`);
+  const badge = (char) => {
+    const res = evaluateCharForMeta(char.name, ownedCharsMap, {});
+    const imgUrl = char.iconUrl || getIcyVeinsPortrait(char.name);
+    const badgeCls = res.status === 'owned-built' ? 'owned' : res.status === 'owned-unbuilt' ? 'owned-unbuilt' : 'missing';
+    const sym = res.status === 'owned-built' ? ' ✓' : res.status === 'owned-unbuilt' ? ' ⚠' : '';
+    return `<div class="meta-char-badge ${badgeCls}" title="${esc(char.name)}${sym} — ${esc(res.statusText)}">
+      <img src="${imgUrl}" alt="${esc(char.name)}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
+      <span>${esc(char.name)}</span>
+    </div>`;
+  };
 
-  TIERS.forEach(tier => {
-    html += `<div class="meta-tier-row">`;
-    html += `<div class="meta-tier-label ${TIER_CLS[tier] || ''}">${tier}</div>`;
+  let html = '';
+  TIERS.forEach(({ tier, cls, label }) => {
+    const count = ROLE_COLS.reduce((s, r) => s + matrix[tier][r].length, 0);
+    if (count === 0) return;
+    html += `<div class="tier-section ${cls}">
+      <div class="tier-section-hdr">
+        <span class="tier-badge">${tier}</span>
+        <span class="tier-section-label">${label}</span>
+        <span class="tier-char-count">${count} characters</span>
+      </div>
+      <div class="tier-roles-row">`;
     ROLE_COLS.forEach(role => {
-      html += `<div class="meta-tier-cell">`;
-      matrix[tier][role].forEach(char => {
-        const res = evaluateCharForMeta(char.name, ownedCharsMap, {});
-        const imgUrl = char.iconUrl || getIcyVeinsPortrait(char.name);
-        const badgeCls = res.status === 'owned-built' ? 'owned' : res.status === 'owned-unbuilt' ? 'owned-unbuilt' : 'missing';
-        const statusSymbol = res.status === 'owned-built' ? ' ✓' : res.status === 'owned-unbuilt' ? ' ⚠' : '';
-        html += `<div class="meta-char-badge ${badgeCls}" title="${esc(char.name)}${statusSymbol} — ${esc(res.statusText)}">
-          <img src="${imgUrl}" alt="${esc(char.name)}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
-          <span>${esc(char.name)}</span>
+      const chars = matrix[tier][role];
+      if (chars.length === 0) {
+        html += `<div class="tier-role-group empty"><div class="tier-role-label">${role}</div><span class="tier-empty-msg">—</span></div>`;
+      } else {
+        html += `<div class="tier-role-group">
+          <div class="tier-role-label">${role}</div>
+          <div class="tier-chars-wrap">${chars.map(badge).join('')}</div>
         </div>`;
-      });
-      html += `</div>`;
+      }
     });
-    html += `</div>`;
+    html += `</div></div>`;
   });
 
-  html += `</div></div>`;
+  container.innerHTML = html || "<p class='empty-text'>No tier data available.</p>";
+}
+
+function scoreTeamsFromMeta(teams, roles) {
+  const charBest = {};
+  Object.values(roles).forEach(chars => {
+    chars.forEach(c => {
+      if (!charBest[c.name] || c.score > charBest[c.name].score) charBest[c.name] = c;
+    });
+  });
+  const tierLabel = s => s >= 20 ? 'S+' : s >= 14 ? 'S' : s >= 7 ? 'A' : 'B';
+  return teams
+    .map(team => {
+      const coreScored = (team.core || []).map(name => ({ name, ...(charBest[name] || { score: 0, tier: '?', iconUrl: '' }) }));
+      const avg = coreScored.reduce((s, c) => s + c.score, 0) / Math.max(coreScored.length, 1);
+      return { ...team, coreScored, avgScore: avg, avgTier: tierLabel(avg) };
+    })
+    .filter(t => t.avgScore >= 14)
+    .sort((a, b) => b.avgScore - a.avgScore);
+}
+
+function renderTargetTeams(container, targetTeams, ownedCharsMap) {
+  if (!targetTeams || targetTeams.length === 0) {
+    container.innerHTML = "<p class='empty-text'>No teams meet the S-average threshold from current tier data.</p>";
+    return;
+  }
+  const tierCls = t => t === 'S+' ? 't-splus' : t === 'S' ? 't-s' : 't-a';
+
+  let html = `<div class="target-teams-grid">`;
+  targetTeams.forEach(team => {
+    const ownedCount = team.coreScored.filter(c => ownedCharsMap[c.name.toLowerCase()]).length;
+    const total = team.coreScored.length;
+    const pct = Math.round((ownedCount / total) * 100);
+    html += `<div class="target-team-card">
+      <div class="target-team-hdr">
+        <div class="target-team-name">${esc(team.name)}</div>
+        <span class="target-team-avg ${tierCls(team.avgTier)}">Avg ${esc(team.avgTier)}</span>
+      </div>
+      <div class="target-team-chars">`;
+    team.coreScored.forEach(c => {
+      const owned = ownedCharsMap[c.name.toLowerCase()];
+      const imgUrl = c.iconUrl || getIcyVeinsPortrait(c.name);
+      const statusCls = owned ? 'owned' : 'missing';
+      const tierB = c.tier && c.tier !== '?' ? `<span class="char-mini-tier ${tierCls(c.tier)}">${esc(c.tier)}</span>` : '';
+      html += `<div class="target-team-char ${statusCls}" title="${esc(c.name)}${owned ? ' ✓' : ''} (${esc(c.tier || '?')})">
+        <div class="target-char-img-wrap">
+          <img src="${imgUrl}" alt="${esc(c.name)}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
+          ${tierB}
+        </div>
+        <span>${esc(c.name)}</span>
+      </div>`;
+    });
+    html += `</div>
+      <div class="target-team-footer">
+        <div class="target-team-progress">
+          <div class="target-team-bar"><div class="target-team-fill" style="width:${pct}%"></div></div>
+          <span>${ownedCount}/${total} owned</span>
+        </div>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
   container.innerHTML = html;
 }
 
@@ -3135,22 +3211,31 @@ function renderBuildRoadmap(container, buildNow, pullTargets) {
 async function renderMetaTab() {
   const priorityEl = document.getElementById("meta-build-priority");
   const tierTableEl = document.getElementById("meta-tier-table");
+  const targetTeamsEl = document.getElementById("meta-target-teams");
   if (!priorityEl || !tierTableEl) return;
 
-  // Fetch live icy-veins tier data (cached 12h in KV)
+  // Fetch live icy-veins tier data (cached 12h in KV) and metaData teams in parallel
+  const fetches = [];
   if (!cachedLiveRoles) {
-    try {
-      const r = await fetch('/api/meta-scrape');
-      if (r.ok) {
-        const d = await r.json();
-        if (d.roles) cachedLiveRoles = d.roles;
-      }
-    } catch (e) { console.error('meta-scrape failed', e); }
+    fetches.push(
+      fetch('/api/meta-scrape').then(r => r.ok ? r.json() : null)
+        .then(d => { if (d && d.roles) cachedLiveRoles = d.roles; })
+        .catch(e => console.error('meta-scrape failed', e))
+    );
   }
+  if (!cachedMetaTeams) {
+    fetches.push(
+      fetch('metaData.json').then(r => r.ok ? r.json() : null)
+        .then(d => { cachedMetaTeams = (d && d.teams) ? d.teams : []; })
+        .catch(() => { cachedMetaTeams = []; })
+    );
+  }
+  if (fetches.length) await Promise.all(fetches);
 
   if (!cachedLiveRoles) {
     priorityEl.innerHTML = "<p class='empty-text'>Unable to load tier data. Try again shortly.</p>";
     tierTableEl.innerHTML = "<p class='empty-text'>Tier data unavailable.</p>";
+    if (targetTeamsEl) targetTeamsEl.innerHTML = "<p class='empty-text'>Tier data unavailable.</p>";
     return;
   }
 
@@ -3162,8 +3247,13 @@ async function renderMetaTab() {
     if (fn && fn !== 'character') ownedChars[fn] = c;
   });
 
-  // Always render tier table (visible even without login)
+  // Render tier table and target teams (visible even without login)
   renderMetaTierTable(tierTableEl, cachedLiveRoles, ownedChars);
+
+  if (targetTeamsEl && cachedMetaTeams && cachedMetaTeams.length > 0) {
+    const targetTeams = scoreTeamsFromMeta(cachedMetaTeams, cachedLiveRoles);
+    renderTargetTeams(targetTeamsEl, targetTeams, ownedChars);
+  }
 
   if (!state.characters || state.characters.length === 0) {
     priorityEl.innerHTML = "<p class='empty-text'>Sync your HoYoLAB data to see your personal build roadmap.</p>";

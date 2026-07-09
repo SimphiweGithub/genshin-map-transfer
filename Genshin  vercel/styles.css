@@ -1229,53 +1229,99 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 }
 .tier-source-btn:hover { background: rgba(201,165,110,0.12); color: #e0c080; }
 
-.meta-tier-wrap { overflow-x: auto; }
-.meta-tier-grid {
-  display: grid;
-  grid-template-columns: 46px 1fr 1fr 1fr;
-  min-width: 480px;
+/* ── Tier Sections ───────────────────────────────────── */
+.tier-section {
+  border-radius: 10px; margin-bottom: 10px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.07);
 }
-.meta-tier-col-header {
-  padding: 8px 10px; font-size: 0.7rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.4);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+.tier-section-hdr {
+  display: flex; align-items: center; gap: 10px; padding: 9px 14px;
 }
-.meta-tier-row { display: contents; }
-.meta-tier-label {
-  display: flex; align-items: flex-start; justify-content: center;
-  padding: 12px 4px; font-weight: 800; font-size: 0.85rem;
-  border-right: 1px solid rgba(255,255,255,0.06);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+.tier-section.t-splus .tier-section-hdr { background: rgba(255,70,70,0.10); border-bottom: 2px solid rgba(255,90,90,0.20); }
+.tier-section.t-s .tier-section-hdr     { background: rgba(255,200,50,0.08); border-bottom: 2px solid rgba(255,208,60,0.16); }
+.tier-section.t-a .tier-section-hdr     { background: rgba(100,190,155,0.07); border-bottom: 2px solid rgba(116,194,160,0.13); }
+.tier-badge {
+  font-size: 0.82rem; font-weight: 900; letter-spacing: 0.05em;
+  min-width: 34px; height: 22px; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center; padding: 0 6px;
 }
-.meta-tier-label.t-splus { color: #ff7070; background: rgba(255,90,90,0.07); }
-.meta-tier-label.t-s     { color: #ffd060; background: rgba(255,208,60,0.06); }
-.meta-tier-label.t-a     { color: #74c2a0; background: rgba(116,194,160,0.05); }
-.meta-tier-label.t-b     { color: #909090; }
-.meta-tier-cell {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  padding: 10px; align-content: flex-start;
-  border-right: 1px solid rgba(255,255,255,0.04);
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-}
+.t-splus .tier-badge { background: rgba(255,100,100,0.22); color: #ff7070; }
+.t-s .tier-badge     { background: rgba(255,208,60,0.20);  color: #ffd060; }
+.t-a .tier-badge     { background: rgba(116,194,160,0.18); color: #74c2a0; }
+.tier-section-label { font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.65); flex: 1; }
+.tier-char-count    { font-size: 0.68rem; color: rgba(255,255,255,0.28); }
+.tier-roles-row     { display: grid; grid-template-columns: repeat(3, 1fr); }
+.tier-role-group    { padding: 10px 12px; border-right: 1px solid rgba(255,255,255,0.05); }
+.tier-role-group:last-child { border-right: none; }
+.tier-role-group.empty { opacity: 0.4; }
+.tier-role-label    { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.33); margin-bottom: 9px; }
+.tier-chars-wrap    { display: flex; flex-wrap: wrap; gap: 8px; }
+.tier-empty-msg     { font-size: 0.78rem; color: rgba(255,255,255,0.2); }
+
+/* Character badge (used in tier table) */
 .meta-char-badge {
   display: flex; flex-direction: column; align-items: center;
-  gap: 3px; width: 50px; cursor: default;
+  gap: 4px; width: 56px; cursor: default;
 }
 .meta-char-badge img {
-  width: 44px; height: 44px; border-radius: 50%;
-  object-fit: cover; border: 2px solid transparent;
-  transition: transform 0.15s;
+  width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s; box-shadow: 0 2px 8px rgba(0,0,0,0.35);
 }
-.meta-char-badge:hover img { transform: scale(1.08); }
+.meta-char-badge:hover img { transform: scale(1.07); }
 .meta-char-badge span {
-  font-size: 0.58rem; color: rgba(255,255,255,0.65);
-  text-align: center; line-height: 1.2; word-break: break-word;
+  font-size: 0.57rem; color: rgba(255,255,255,0.65);
+  text-align: center; line-height: 1.2; word-break: break-word; max-width: 56px;
 }
-.meta-char-badge.owned img         { border-color: #74c2a0; }
-.meta-char-badge.owned-unbuilt img { border-color: #ef7027; }
-.meta-char-badge.missing img       { filter: grayscale(0.75); opacity: 0.4; }
+.meta-char-badge.owned img         { border-color: #74c2a0; box-shadow: 0 0 8px rgba(116,194,160,0.28); }
+.meta-char-badge.owned-unbuilt img { border-color: #ef7027; box-shadow: 0 0 8px rgba(239,112,39,0.28); }
+.meta-char-badge.missing img       { filter: grayscale(0.75); opacity: 0.42; }
 .meta-char-badge.missing span      { opacity: 0.45; }
+
+/* ── Target Teams ─────────────────────────────────────── */
+.meta-tag {
+  font-size: 0.68rem; color: rgba(255,255,255,0.38);
+  background: rgba(255,255,255,0.06); border-radius: 20px; padding: 2px 10px;
+}
+.target-teams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.target-team-card {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px; padding: 14px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.target-team-card:hover { border-color: rgba(255,255,255,0.14); background: rgba(255,255,255,0.05); }
+.target-team-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.target-team-name { flex: 1; font-weight: 600; font-size: 0.88rem; color: #e4e4e4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.target-team-avg { font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.04em; flex-shrink: 0; }
+.target-team-avg.t-splus { background: rgba(255,90,90,0.15); color: #ff7070; }
+.target-team-avg.t-s     { background: rgba(255,208,60,0.12); color: #ffd060; }
+.target-team-avg.t-a     { background: rgba(116,194,160,0.12); color: #74c2a0; }
+.target-team-chars       { display: flex; gap: 8px; flex-wrap: wrap; }
+.target-team-char        { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 52px; }
+.target-char-img-wrap    { position: relative; width: 48px; height: 48px; }
+.target-team-char img    {
+  width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.10); box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+}
+.target-team-char.owned img   { border-color: #74c2a0; }
+.target-team-char.missing img { filter: grayscale(0.65); opacity: 0.5; }
+.char-mini-tier {
+  position: absolute; bottom: -3px; right: -3px;
+  font-size: 0.52rem; font-weight: 900; padding: 1px 4px; border-radius: 3px; line-height: 1.2;
+}
+.char-mini-tier.t-splus { background: rgba(200,50,50,0.92); color: #fff; }
+.char-mini-tier.t-s     { background: rgba(185,145,20,0.92); color: #fff; }
+.char-mini-tier.t-a     { background: rgba(60,145,110,0.92); color: #fff; }
+.target-team-char span  { font-size: 0.56rem; color: rgba(255,255,255,0.55); text-align: center; line-height: 1.2; word-break: break-word; max-width: 52px; }
+.target-team-footer     { margin-top: 12px; }
+.target-team-progress   { display: flex; align-items: center; gap: 8px; }
+.target-team-bar        { flex: 1; height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+.target-team-fill       { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #74c2a0, #c9a56e); transition: width 0.4s; }
+.target-team-progress span { font-size: 0.7rem; color: rgba(255,255,255,0.35); flex-shrink: 0; }
 
 /* ── Build Roadmap ───────────────────────────────────── */
 .roadmap-section { padding: 6px 0 18px; }
