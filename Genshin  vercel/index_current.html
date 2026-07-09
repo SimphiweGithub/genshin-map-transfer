@@ -27,85 +27,41 @@
   <!-- Stars Background layer -->
   <div class="stars-bg"></div>
 
-  <!-- Header / Navigation Bar -->
+  <!-- Unified Header Bar -->
   <header class="app-header">
-    <div class="logo-container">
-      <div class="logo-orb"><svg viewBox="0 0 16 16" width="18" height="18"><path d="M8 0l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="currentColor"/></svg></div>
-      <h1>Teyvat Chrono</h1>
-      <span class="logo-tag">Genshin Dashboard</span>
-    </div>
-
-    <!-- Global Controls -->
-    <div class="header-controls">
-      <!-- Live Server Time -->
-      <div class="server-time-card">
-        <span class="server-label">SERVER TIME</span>
-        <span id="server-time-display">--:--:--</span>
-      </div>
-
-      <!-- Quick Actions -->
-      <button id="refresh-btn" class="icon-btn btn-primary" title="Sync Live Data">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-        <span>Refresh</span>
-      </button>
-
-
-
-      <button id="sound-toggle" class="icon-btn btn-secondary" title="Mute/Unmute Alerts">
-        <svg id="sound-icon-on" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-        <svg id="sound-icon-off" class="hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-      </button>
-
-      <button id="settings-btn" class="icon-btn btn-gold" title="Settings & Auth">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span>Credentials</span>
-      </button>
+    <div class="logo-orb"><svg viewBox="0 0 16 16" width="22" height="22"><path d="M8 0l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="currentColor"/></svg></div>
+    <nav class="header-nav">
+      <button class="tab-link active" data-tab="home"><svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Dashboard</button>
+      <button class="tab-link" data-tab="characters"><svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/></svg>Characters</button>
+      <button class="tab-link" data-tab="abyss"><svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6 2 2-6 6z"/></svg>Abyss</button>
+      <button class="tab-link" data-tab="domains"><svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Domains</button>
+      <button class="tab-link" data-tab="wishes"><svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4l-6.4 4.8L8 14 2 9.2h7.6z"/></svg>Wishes</button>
+      <button class="tab-link" data-tab="meta"><svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Meta Tracker</button>
+    </nav>
+    <div class="header-actions">
+      <span id="server-time-display" class="server-time-value">--:--:--</span>
+      <button id="refresh-btn" class="header-icon-btn" title="Sync Live Data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg></button>
+      <button id="sound-toggle" class="header-icon-btn" title="Sound"><svg id="sound-icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg><svg id="sound-icon-off" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg></button>
+      <button id="settings-btn" class="header-icon-btn header-icon-btn--gold" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     </div>
   </header>
 
-  <!-- App Sub-Bar: Server Indicator & Reset Countdowns -->
-  <div class="sub-bar">
+  <!-- Sub-bar (hidden, elements kept for JS updates) -->
+  <div class="sub-bar" style="display:none">
     <div class="reset-timer-strip">
-      <div class="reset-item">
-        <span class="label">Server Reset:</span>
-        <span id="daily-reset-countdown" class="value text-cyan">--h --m</span>
-      </div>
-      <div class="reset-item">
-        <span class="label">Weekly Reset:</span>
-        <span id="weekly-reset-countdown" class="value text-gold">--d --h</span>
-      </div>
-      <div class="reset-item">
-        <span class="label">Abyss Reset:</span>
-        <span id="abyss-reset-countdown" class="value text-purple">--d --h</span>
-      </div>
-
-      <!-- Live sync status -->
-      <div class="reset-item sync-status-item">
-        <span id="sync-dot" class="sync-dot waiting"></span>
-        <span id="sync-status-label" class="label">No data yet</span>
-      </div>
-      <div class="reset-item">
-        <span class="label">Next sync:</span>
-        <span id="next-sync-countdown" class="value text-cyan">--:--</span>
-      </div>
+      <div class="reset-item"><span class="label">Server Reset:</span><span id="daily-reset-countdown" class="value text-cyan">--h --m</span></div>
+      <div class="reset-item"><span class="label">Weekly Reset:</span><span id="weekly-reset-countdown" class="value text-gold">--d --h</span></div>
+      <div class="reset-item"><span class="label">Abyss Reset:</span><span id="abyss-reset-countdown" class="value text-purple">--d --h</span></div>
+      <div class="reset-item sync-status-item"><span id="sync-dot" class="sync-dot waiting"></span><span id="sync-status-label" class="label">No data yet</span></div>
+      <div class="reset-item"><span class="label">Next sync:</span><span id="next-sync-countdown" class="value text-cyan">--:--</span></div>
     </div>
   </div>
 
   <!-- Notification Banner -->
   <div id="info-banner" class="info-banner hidden">
-    <span id="banner-text">Welcome! Click Credentials above to connect your HoYoLAB account for auto-sync.</span>
+    <span id="banner-text">Welcome! Open Settings to connect your HoYoLAB account for auto-sync.</span>
     <button id="banner-close-btn" class="close-btn">&times;</button>
   </div>
-
-  <!-- Tabs Navigation -->
-  <nav class="tab-navigation">
-    <button class="tab-link active" data-tab="home">Home Dashboard</button>
-    <button class="tab-link" data-tab="characters">Characters & Maps</button>
-    <button class="tab-link" data-tab="abyss">Spiral Abyss & Ledger</button>
-    <button class="tab-link" data-tab="domains">Domain Schedule</button>
-    <button class="tab-link" data-tab="wishes">Wishes</button>
-    <button class="tab-link" data-tab="meta">Meta Tracker</button>
-  </nav>
 
   <!-- Main Body Content Grid -->
   <main class="main-content">
@@ -129,26 +85,32 @@
             </div>
             <div class="account-stats">
               <div class="stat-box">
+                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 <span class="val" id="stat-days">--</span>
                 <span class="lbl">Active Days</span>
               </div>
               <div class="stat-box">
+                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9H4a2 2 0 01-2-2V5a2 2 0 012-2h2M18 9h2a2 2 0 002-2V5a2 2 0 00-2-2h-2M6 3h12v6a6 6 0 01-12 0V3z"/><path d="M12 15v3M8 21h8M10 18h4"/></svg>
                 <span class="val" id="stat-achievements">--</span>
                 <span class="lbl">Achievements</span>
               </div>
               <div class="stat-box">
+                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
                 <span class="val" id="stat-characters">--</span>
                 <span class="lbl">Characters</span>
               </div>
               <div class="stat-box">
+                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
                 <span class="val" id="stat-abyss">--</span>
                 <span class="lbl">Abyss Floor</span>
               </div>
               <div class="stat-box">
+                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 10-16 0c0 3 2.7 7 8 11.7z"/></svg>
                 <span class="val" id="stat-waypoints">--</span>
                 <span class="lbl">Waypoints</span>
               </div>
               <div class="stat-box">
+                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 8v13H3V8M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
                 <span class="val" id="stat-chests">--</span>
                 <span class="lbl">Chests Opened</span>
               </div>
@@ -194,6 +156,10 @@
         <div class="column flex-column gap-lg">
           <!-- Main Resin Tracker -->
           <div class="card glass-card resin-card">
+            <div class="card-header">
+              <span class="card-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z"/></svg></span>
+              <h2>Resin Overview</h2>
+            </div>
             <div class="resin-tracker-wrapper">
               <div class="radial-progress-container">
                 <svg viewBox="0 0 120 120" class="radial-svg">
@@ -621,6 +587,7 @@
       <div class="dashboard-grid">
         <div class="card glass-card col-span-full">
           <div class="card-header">
+            <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
             <h2>Account Meta Alignment</h2>
           </div>
           <div class="meta-alignment-summary">
@@ -642,6 +609,7 @@
 
         <div class="card glass-card col-span-full">
           <div class="card-header">
+            <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
             <h2>Build Priority Queue</h2>
           </div>
           <div id="meta-build-priority" class="build-priority-list">
@@ -651,6 +619,7 @@
 
         <div class="card glass-card col-span-full">
           <div class="card-header">
+            <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></span>
             <h2>Certified OP Teams</h2>
           </div>
           <div id="meta-teams-grid" class="meta-teams-grid">
@@ -660,6 +629,7 @@
 
         <div class="card glass-card col-span-full">
           <div class="card-header">
+            <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
             <h2>Top Tier Individual Roles</h2>
           </div>
           <div class="meta-roles-container">
@@ -822,7 +792,8 @@
     </div>
   </div>
 
-  <script src="app.js?v=11"></script>
+  <script src="metaData.js"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>
 
