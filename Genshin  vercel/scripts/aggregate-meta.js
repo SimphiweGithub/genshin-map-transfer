@@ -86,6 +86,7 @@ async function scrapeGameWith() {
         // Inside portraitsContainer, each child is a character
         portraitsContainer.children().each((j, charEl) => {
             const name = $(charEl).find('h2').text().trim();
+            const iconUrl = $(charEl).find('.character-icon').attr('src');
             let roleStr = $(charEl).find('.tierlist-role').text().trim();
             
             if (!name || !roleStr) return;
@@ -97,6 +98,7 @@ async function scrapeGameWith() {
 
             rolesData[category].push({
                 name,
+                iconUrl,
                 tier: tier === 'S' ? 'S+' : (tier === 'A' ? 'S' : 'A'), // shift up slightly for display
                 score: score
             });
@@ -140,8 +142,9 @@ async function aggregateData() {
               if (n === 'Yae Miko') n = 'Yae';
               
               if (!charMap[n]) {
-                  charMap[n] = { name: n, tier: c.tier, score: 0 };
+                  charMap[n] = { name: n, tier: c.tier, score: 0, iconUrl: c.iconUrl };
               }
+              if (c.iconUrl && !charMap[n].iconUrl) charMap[n].iconUrl = c.iconUrl;
               charMap[n].score += c.score;
               // Keep the highest tier
               if (c.tier === 'S+' && charMap[n].tier !== 'S+') charMap[n].tier = 'S+';

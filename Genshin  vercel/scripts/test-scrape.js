@@ -1,17 +1,14 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-axios.get('https://www.icy-veins.com/genshin-impact/tier-list', {
-    headers: { 'User-Agent': 'Mozilla/5.0' }
-}).then(r => {
+axios.get('https://genshin.gg/tier-list/').then(r => {
     const $ = cheerio.load(r.data);
-    console.log("Icy Veins DOM Check:");
-    // Icy Veins usually uses tables or specific divs for tier lists.
-    // Let's find Neuvillette to see what the container is.
-    const charEl = $('span:contains("Neuvillette")').first();
-    const table = charEl.closest('.tier-list');
     
-    // Let's iterate through rows
+    // Find the first character
+    const char = $('.character-portrait').first();
+    console.log("Image source:", char.find('.character-icon').attr('src'));
+    console.log("Character name:", char.closest('.tierlist-row, .dropzone-row').find('h2').text() || char.parent().find('h2').text());
+}).catch(console.error);
     table.find('tr').each((i, tr) => {
         if (i === 0) {
            console.log("Headers:", $(tr).find('th').map((_, th) => $(th).text().trim()).get());

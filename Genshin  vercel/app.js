@@ -3095,12 +3095,13 @@ async function renderMetaTab() {
   if (metaData.roles && dpsList) {
     const renderRoleList = (roleArray, container) => {
       if(!roleArray) return;
-      // Show top 8 max
-      roleArray.slice(0, 8).forEach(char => {
+      // Filter out B tier if any made it through (they shouldn't have) and show all
+      roleArray.filter(c => ['S+', 'S', 'A'].includes(c.tier)).forEach(char => {
         const res = evaluateCharForMeta(char.name, ownedChars);
+        const iconToUse = res.icon || char.iconUrl || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
         container.innerHTML += `
           <div class="meta-role-item ${res.status}" title="${char.name} - ${res.statusText}">
-            <img class="role-char-icon" src="${res.icon || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'}" alt="${char.name}">
+            <img class="role-char-icon" src="${iconToUse}" alt="${char.name}">
             <div class="role-char-info">
               <span class="role-char-name">${char.name}</span>
               <span class="role-char-tier">Tier ${char.tier}</span>
