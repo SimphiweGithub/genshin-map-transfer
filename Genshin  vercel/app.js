@@ -3011,9 +3011,18 @@ async function renderMetaTab() {
       console.error("Failed to fetch metaData.json", e);
     }
   }
-  
+
   const metaData = cachedMetaData;
   if (!metaData) return;
+
+  // Try live icy-veins roles; merge over static metaData.json roles on success
+  try {
+    const liveRes = await fetch('/api/meta-scrape');
+    if (liveRes.ok) {
+      const live = await liveRes.json();
+      if (live.roles) metaData.roles = live.roles;
+    }
+  } catch (_) {}
 
   grid.innerHTML = "";
   priorityList.innerHTML = "";
@@ -3076,7 +3085,7 @@ async function renderMetaTab() {
       if (res.status !== 'owned-built') charScores[charName].teams.push({ name: team.name, tier: team.tier });
 
       html += `<div class="meta-char-slot ${res.status}" title="${charName} - ${res.statusText}">
-                 <img src="${res.icon || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'}" alt="${charName}">
+                 <img src="${res.icon}" alt="${charName}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
                </div>`;
     });
 
@@ -3116,7 +3125,7 @@ async function renderMetaTab() {
       priorityList.innerHTML += `
         <div class="priority-item">
           <div class="priority-char-info">
-            <img src="${p.icon || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'}" alt="${p.name}">
+            <img src="${p.icon || PAIMON_ICON}" alt="${p.name}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
             <div class="priority-details">
               <span class="priority-name">${p.name}</span>
               <span class="priority-reason">${reasonText}</span>
@@ -3134,10 +3143,10 @@ async function renderMetaTab() {
       // Filter out B tier if any made it through (they shouldn't have) and show all
       roleArray.filter(c => ['S+', 'S', 'A'].includes(c.tier)).forEach(char => {
         const res = evaluateCharForMeta(char.name, ownedChars, scrapedIcons);
-        const iconToUse = res.icon || char.iconUrl || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
+        const iconToUse = char.iconUrl || res.icon || PAIMON_ICON;
         container.innerHTML += `
           <div class="meta-role-item ${res.status}" title="${char.name} - ${res.statusText}">
-            <img class="role-char-icon" src="${iconToUse}" alt="${char.name}">
+            <img class="role-char-icon" src="${iconToUse}" alt="${char.name}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
             <div class="role-char-info">
               <span class="role-char-name">${char.name}</span>
               <span class="role-char-tier">Tier ${char.tier}</span>
@@ -3153,41 +3162,20 @@ async function renderMetaTab() {
   }
 }
 
-const META_CHAR_ICONS = {
-  'neuvillette':'Neuvillette','furina':'Furina','kaedehara kazuha':'Kazuha','kazuha':'Kazuha',
-  'baizhu':'Baizhu','zhongli':'Zhongli','charlotte':'Charlotte','arlecchino':'Arlecchino',
-  'yelan':'Yelan','bennett':'Bennett','xingqiu':'Xingqiu','navia':'Navia','xianyun':'Xianyun',
-  'chiori':'Chiori','albedo':'Albedo','alhaitham':'Alhaitham','nahida':'Nahida',
-  'kuki shinobu':'KukiShinobu','nilou':'Nilou','sangonomiya kokomi':'Kokomi','kokomi':'Kokomi',
-  'collei':'Collei','hu tao':'Hutao','xiangling':'Xiangling','thoma':'Thoma','kinich':'Kinich',
-  'emilie':'Emilie','dehya':'Dehya','mualani':'Mualani','kachina':'Kachina','sucrose':'Sucrose',
-  'raiden shogun':'Shougun','raiden':'Shougun','kujou sara':'Sara','sara':'Sara',
-  'chevreuse':'Chevreuse','chasca':'Chasca','wriothesley':'Wriothesley','ayaka':'Ayaka',
-  'clorinde':'Clorinde','cyno':'Cyno','gaming':'Gaming','klee':'Klee','lyney':'Lyney',
-  'venti':'Venti','itto':'Itto','diluc':'Diluc','ganyu':'Ganyu','ayato':'Ayato','kaveh':'Kaveh',
-  'razor':'Razor','xiao':'Xiao','wanderer':'Wanderer','eula':'Eula','keqing':'Keqing',
-  'ningguang':'Ningguang','noelle':'Noelle','sethos':'Sethos','tartaglia':'Tartaglia',
-  'tighnari':'Tighnari','yanfei':'Yanfei','yoimiya':'Yoimiya','fischl':'Fischl',
-  'yae':'Yae','yae miko':'Yae','beidou':'Beidou','ororon':'Ororon','rosaria':'Rosaria',
-  'lynette':'Lynette','citlali':'Citlali','xilonen':'Xilonen','shenhe':'Shenhe',
-  'sigewinne':'Sigewinne','mona':'Mona','faruzan':'Faruzan','jean':'Jean','gorou':'Gorou',
-  'layla':'Layla','diona':'Diona','yaoyao':'Yaoyao','kirara':'Kirara','mika':'Mika',
-  'sayu':'Sayu','yun jin':'Yunjin','qiqi':'Qiqi','lan yan':'Lanyan','mavuika':'Mavuika',
-  'varesa':'Varesa','escoffier':'Escoffier','columbina':'Columbina',
-  'yumemizuki mizuki':'Mizuki','mizuki':'Mizuki',
-};
-
-function getMetaCharIconUrl(charName) {
-  const key = META_CHAR_ICONS[charName.toLowerCase()];
-  return key ? `https://gi.yatta.moe/assets/UI/UI_AvatarIcon_${key}.png` : '';
+// Derives icy-veins portrait URL from display name (slug = lowercase, spaces → hyphens)
+function getIcyVeinsPortrait(charName) {
+  return `https://static.icy-veins.com/images/genshin-impact/portraits/characters/${charName.toLowerCase().replace(/\s+/g, '-')}.webp`;
 }
+
+const PAIMON_ICON = 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
 
 function evaluateCharForMeta(charName, ownedCharsMap, iconMap = {}) {
   const BUILD_THRESHOLDS = { level: 80, keyTalent: 8 };
   const c = ownedCharsMap[charName.toLowerCase()];
-  const fallbackIcon = getMetaCharIconUrl(charName) || iconMap[charName] || '';
+  // icy-veins portrait is primary; fall back to scraped iconMap, then Paimon via onerror
+  const icyPortrait = iconMap[charName] || getIcyVeinsPortrait(charName);
   if (!c) {
-    return { status: "missing", built: false, statusText: "Not Owned", icon: fallbackIcon };
+    return { status: "missing", built: false, statusText: "Not Owned", icon: icyPortrait };
   }
 
   let isBuilt = false;
@@ -3216,7 +3204,8 @@ function evaluateCharForMeta(charName, ownedCharsMap, iconMap = {}) {
     status: isBuilt ? "owned-built" : "owned-unbuilt",
     built: isBuilt,
     statusText,
-    icon: c.image || c.icon || fallbackIcon
+    // prefer icy-veins portrait; HoYoLAB image as backup for exact match
+    icon: icyPortrait
   };
 }
 
