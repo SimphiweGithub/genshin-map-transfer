@@ -1261,6 +1261,9 @@ function appTimerLoop() {
 
   // 8. Dispatch Expeditions Realtime Countdowns
   updateExpeditionsRealtime();
+
+  // 9. Banner countdown live tick (every 60s is fine — no need for per-second)
+  if (now % 60000 < 1100) renderBannerCountdown();
 }
 
 // Update Custom Timers visual countdowns
@@ -1945,6 +1948,7 @@ const normName = s => (s || '').toLowerCase().replace(/[‘’′`']/g, "'").tri
 const STD_CHARS_SET   = new Set(STANDARD_5STAR_CHARS.map(normName));
 const STD_WEAPONS_SET = new Set(STANDARD_5STAR_WEAPONS.map(normName));
 
+const BANNER_STORAGE_KEY = 'teyvatChrono_banners_v1';
 const WISH_STORAGE_KEY = 'teyvatChrono_wishes_v1';
 
 function loadStoredWishes() {
@@ -2119,6 +2123,38 @@ async function syncWishHistory() {
     stored.fetchedAt = new Date().toISOString();
     saveStoredWishes(stored);
 
+    // Also fetch active banner schedule (uses same authkey)
+    try {
+      status.textContent = 'Fetching active banners…';
+      const configQs = new URLSearchParams({
+        authkey: baseParams.authkey,
+        game_biz: baseParams.game_biz || 'hk4e_global',
+        lang: baseParams.lang || 'en',
+        region: baseParams.region || '',
+        authkey_ver: baseParams.authkey_ver || '1',
+        sign_type: baseParams.sign_type || '2',
+        auth_appid: baseParams.auth_appid || 'webview_gacha',
+        action: 'config',
+      });
+      const cfgResp = await fetch(`/api/wishes?${configQs}`);
+      const cfgData = await cfgResp.json();
+      if (cfgData.retcode === 0 && cfgData.data?.gacha_type_list) {
+        const bannerSchedule = cfgData.data.gacha_type_list.map(b => ({
+          name: b.gacha_name || b.name || 'Banner',
+          type: String(b.gacha_type),
+          begin: b.begin_time,
+          end: b.end_time,
+          id: b.gacha_id || b.id || '',
+        }));
+        localStorage.setItem(BANNER_STORAGE_KEY, JSON.stringify({
+          banners: bannerSchedule,
+          fetchedAt: new Date().toISOString()
+        }));
+      }
+    } catch (e) {
+      console.warn('Banner config fetch failed:', e.message);
+    }
+
     const total = Object.values(stored.banners).reduce((s, a) => s + a.length, 0);
     status.textContent = `✓ Sync complete — ${total.toLocaleString()} wishes stored.`;
     status.className = 'wish-sync-status success';
@@ -2176,6 +2212,7 @@ function renderWishUI(data) {
 
   renderFiftyFifty(data);
   renderPlanner(data);
+  renderBannerCountdown();
 
   // Lifetime stats
   const allWishes = Object.values(data.banners).flat();
@@ -2346,6 +2383,30 @@ function renderPlanner(data) {
     const in7  = totalPulls + Math.floor(pullsPerDay * 7);
     const in30 = totalPulls + Math.floor(pullsPerDay * 30);
     const in60 = totalPulls + Math.floor(pullsPerDay * 60);
+
+    // Banner deadline tie-in
+    let bannerLine = '';
+    const bannerInfo = getCharBannerDaysLeft();
+    if (bannerInfo) {
+      const pullsByEnd = totalPulls + Math.floor(pullsPerDay * bannerInfo.days);
+      // Find character banner worst-case
+      const charBanner = GACHA_BANNERS.find(b => b.type === '301');
+      if (charBanner) {
+        const wishes = data.banners[charBanner.type] || [];
+        const { pity } = calcPity(wishes);
+        const ff = analyzeFiftyFifty(wishes.filter(w => w.rank_type === '5'), charBanner.fiftyFifty);
+        const worstGuarantee = ff.guaranteedNext
+          ? (charBanner.hardPity - pity)
+          : (charBanner.hardPity - pity) + charBanner.hardPity;
+        const canGuarantee = pullsByEnd >= worstGuarantee;
+        bannerLine = `<br><span class="proj-label">Banner ends in ${bannerInfo.days}d:</span> ` +
+          `<span class="proj-date">${pullsByEnd}</span> pulls by then` +
+          (canGuarantee
+            ? ` <span style="color:#74c2a0">· ✓ can guarantee</span>`
+            : ` <span style="color:#e84a5f">· need ${worstGuarantee - pullsByEnd} more</span>`);
+      }
+    }
+
     proj.innerHTML = `
       <span class="proj-label">Daily income:</span> <span class="proj-rate">~${dailyPrimos} primos/day</span>
       (${welkin ? 'Welkin ✓' : 'no Welkin'} · ${bp ? 'BP ✓' : 'no BP'})<br>
@@ -2353,8 +2414,88 @@ function renderPlanner(data) {
       <span class="proj-date">${in7}</span> in 7 days ·
       <span class="proj-date">${in30}</span> in 30 days ·
       <span class="proj-date">${in60}</span> in 60 days
+      ${bannerLine}
     `;
   }
+}
+
+function loadBannerSchedule() {
+  try { return JSON.parse(localStorage.getItem(BANNER_STORAGE_KEY) || 'null'); } catch { return null; }
+}
+
+function renderBannerCountdown() {
+  const card = document.getElementById('banner-countdown-card');
+  const grid = document.getElementById('banner-countdown-grid');
+  if (!card || !grid) return;
+
+  const stored = loadBannerSchedule();
+  if (!stored || !stored.banners || !stored.banners.length) {
+    card.style.display = 'none';
+    return;
+  }
+
+  const now = Date.now();
+  const GACHA_COLORS = { '301': '#ef7027', '400': '#ef7027', '302': '#9f71cf', '200': '#47bfe0', '100': '#74c2a0', '500': '#c8a040' };
+  const GACHA_LABELS = { '301': 'Character Event', '400': 'Character Event 2', '302': 'Weapon Event', '200': 'Standard', '100': 'Beginner', '500': 'Chronicled' };
+
+  // Parse server-local times. The gacha API returns times like "2024-06-25 18:00:00"
+  // in the player's server timezone. We approximate by treating them as local time.
+  const parseBannerTime = (s) => {
+    if (!s) return 0;
+    return new Date(s.replace(' ', 'T')).getTime();
+  };
+
+  const active = stored.banners
+    .map(b => ({ ...b, endMs: parseBannerTime(b.end), beginMs: parseBannerTime(b.begin) }))
+    .filter(b => b.endMs > now)
+    .sort((a, b) => a.endMs - b.endMs);
+
+  if (!active.length) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+
+  grid.innerHTML = active.map(b => {
+    const remaining = Math.max(0, Math.floor((b.endMs - now) / 1000));
+    const days = Math.floor(remaining / 86400);
+    const hrs  = Math.floor((remaining % 86400) / 3600);
+    const mins = Math.floor((remaining % 3600) / 60);
+    const urgent = days <= 2;
+    const color = GACHA_COLORS[b.type] || '#aaa';
+    const label = GACHA_LABELS[b.type] || b.type;
+
+    let timeStr;
+    if (remaining <= 0) {
+      timeStr = `<span class="cd-ended">Ended</span>`;
+    } else if (days > 0) {
+      timeStr = `<span class="${urgent ? 'cd-urgent' : 'cd-normal'}">${days}d ${hrs}h ${mins}m</span>`;
+    } else {
+      timeStr = `<span class="cd-urgent">${hrs}h ${mins}m</span>`;
+    }
+
+    return `
+      <div class="banner-cd-card" style="border-color:${color}33">
+        <div style="width:4px;height:40px;border-radius:2px;background:${color};flex-shrink:0"></div>
+        <div class="banner-cd-info">
+          <div class="banner-cd-name" style="color:${color}">${b.name}</div>
+          <div class="banner-cd-type">${label}</div>
+          <div class="banner-cd-time">${urgent && remaining > 0 ? '⏰ ' : ''}Ends in ${timeStr}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// Get days remaining on the character event banner for the planner
+function getCharBannerDaysLeft() {
+  const stored = loadBannerSchedule();
+  if (!stored || !stored.banners) return null;
+  const now = Date.now();
+  const charBanner = stored.banners.find(b => b.type === '301' || b.type === '400');
+  if (!charBanner) return null;
+  const endMs = new Date(charBanner.end?.replace(' ', 'T')).getTime();
+  if (endMs <= now) return null;
+  return { days: Math.ceil((endMs - now) / 86400000), name: charBanner.name };
 }
 
 function renderWishList(data, filterType) {
@@ -2455,6 +2596,7 @@ function initWishTab() {
   // Load any previously stored data on tab open
   const stored = loadStoredWishes();
   if (stored) renderWishUI(stored);
+  renderBannerCountdown();
 }
 
 // Draw characters list catalog

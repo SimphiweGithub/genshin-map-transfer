@@ -11,10 +11,13 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
   let { authkey, gacha_type, end_id, game_biz, lang, region,
-        authkey_ver, sign_type, auth_appid } = req.query;
+        authkey_ver, sign_type, auth_appid, action } = req.query;
 
-  if (!authkey || !gacha_type) {
-    return res.status(400).json({ retcode: -1, message: 'authkey and gacha_type are required' });
+  if (!authkey) {
+    return res.status(400).json({ retcode: -1, message: 'authkey is required' });
+  }
+  if (!action && !gacha_type) {
+    return res.status(400).json({ retcode: -1, message: 'gacha_type is required' });
   }
 
   // The authkey from the frontend may be double-encoded — decode once so
@@ -46,6 +49,38 @@ module.exports = async (req, res) => {
     authkey,
   });
   if (region) qs.set('region', region);
+
+  // Banner config endpoint — returns active banners with begin/end times
+  if (action === 'config') {
+    const configQs = new URLSearchParams({
+      authkey_ver: authkey_ver || '1',
+      sign_type:   sign_type   || '2',
+      auth_appid:  auth_appid  || 'webview_gacha',
+      lang:        lang   || 'en',
+      game_biz:    biz,
+      authkey,
+    });
+    if (region) configQs.set('region', region);
+    const configUrl = `https://${host}/gacha_info/api/getConfigList?${configQs}`;
+
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const r = await fetch(configUrl, {
+        signal: ctrl.signal,
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }
+      });
+      clearTimeout(t);
+      const data = await r.json();
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(200).json(data);
+    } catch (err) {
+      clearTimeout(t);
+      return res.status(err.name === 'AbortError' ? 504 : 500).json({
+        retcode: -1, message: err.name === 'AbortError' ? 'Config fetch timed out' : err.message
+      });
+    }
+  }
 
   const url = `https://${host}/gacha_info/api/getGachaLog?${qs}`;
 

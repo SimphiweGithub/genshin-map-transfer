@@ -1605,3 +1605,31 @@ kbd {
 .resin-tip-icon { flex-shrink: 0; font-size: .9rem; }
 .resin-tip-text { color: rgba(255,255,255,.75); }
 .resin-tip-text strong { color: #c8a040; }
+
+/* ── Banner countdown ──────────────────────────────────────── */
+.banner-countdown-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+.banner-cd-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.06);
+}
+.banner-cd-card .banner-cd-icon {
+  width: 48px; height: 48px; border-radius: 8px;
+  object-fit: cover; background: rgba(0,0,0,.3);
+}
+.banner-cd-info { flex: 1; min-width: 0; }
+.banner-cd-name {
+  font-size: .85rem; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.banner-cd-type { font-size: .68rem; color: rgba(255,255,255,.4); text-transform: uppercase; }
+.banner-cd-time {
+  font-size: .82rem; margin-top: 2px;
+}
+.banner-cd-time .cd-urgent { color: #e84a5f; font-weight: 600; }
+.banner-cd-time .cd-normal { color: #47bfe0; }
+.banner-cd-time .cd-ended { color: rgba(255,255,255,.3); }
