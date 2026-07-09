@@ -152,7 +152,8 @@ let state = {
   // Sync tracking
   lastSyncTime: 0,
   nextSyncTime: 0,
-  
+  connectionIssue: null,   // 'auth' | 'network' | 'privacy' | 'geetest' | 'ratelimit' | null
+
   // Resin Data
   resin: {
     count: 0,
@@ -282,6 +283,8 @@ function loadLocalStorage() {
       console.error("Error parsing stored state, resetting.", e);
     }
   }
+  // Don't carry a stale connection warning across reloads — the next refresh sets it.
+  state.connectionIssue = null;
 
   // Load promo codes from cache (will be overwritten by live fetch)
   const storedCodes = localStorage.getItem("teyvat_chrono_codes");
@@ -462,10 +465,47 @@ async function fetchHoyolabAPI(action, extraParams = {}) {
 
   const response = await fetch(`${baseUrl}?${params.toString()}`);
   if (!response.ok) {
-    const errorJson = await response.json();
-    throw new Error(errorJson.message || "Failed to contact HoYoLAB serverless API");
+    let msg = `HTTP ${response.status}`;
+    try { const j = await response.json(); msg = j.message || msg; } catch (_) {}
+    const err = new Error(msg);
+    err.httpStatus = response.status;
+    throw err;
   }
   return await response.json();
+}
+
+// Turn a HoYoLAB retcode / network error into a clear, actionable message.
+// kind is used to pick the most important problem to surface and to drive
+// the header connection indicator.
+function classifyHoyoError({ retcode, message = "", httpStatus } = {}) {
+  const m = (message || "").toLowerCase();
+  if (httpStatus === 504 || httpStatus === 502 || httpStatus === 503 ||
+      m.includes("gateway time-out") || m.includes("timed out") || m.includes("failed to fetch")) {
+    return { kind: "network", text: "Can't reach HoYoLAB right now — their servers (or the proxy) timed out. Your last cached data is still shown; try Refresh again shortly." };
+  }
+  if ([-100, 10001, -101].includes(retcode) || m.includes("not logged in") || m.includes("login")) {
+    return { kind: "auth", text: "Your HoYoLAB cookies have expired. Open Credentials and paste fresh ltoken_v2 / ltuid_v2 values." };
+  }
+  if (retcode === 10102 || m.includes("not public")) {
+    return { kind: "privacy", text: "Your Battle Chronicle is private. In HoYoLAB → Settings → Privacy, enable Battle Chronicle, then Refresh." };
+  }
+  if (retcode === 1034 || m.includes("risk") || m.includes("verif")) {
+    return { kind: "geetest", text: "HoYoLAB is asking for verification. Open the HoYoLAB app, view your Battle Chronicle once, then Refresh here." };
+  }
+  if (retcode === 10101) {
+    return { kind: "ratelimit", text: "You've hit HoYoLAB's daily data limit (30×). Try again tomorrow." };
+  }
+  return { kind: "other", text: message || "Unknown error from HoYoLAB." };
+}
+
+// Pick the single most important problem to show the user.
+const _issuePriority = ["auth", "privacy", "geetest", "ratelimit", "network", "other"];
+function pickPrimaryIssue(issues) {
+  for (const k of _issuePriority) {
+    const hit = issues.find(i => i.kind === k);
+    if (hit) return hit;
+  }
+  return null;
 }
 
 // Handle test connection in settings panel
@@ -535,6 +575,7 @@ async function handleRefresh() {
 
   try {
     let errorsOccurred = [];
+    let issues = [];   // structured, classified problems for a clear banner
 
     // 1. Fetch Daily Notes (Critical)
   try {
@@ -594,10 +635,12 @@ async function handleRefresh() {
       }
     } else {
       errorsOccurred.push(`Resin/Expeditions: ${noteData.message} (retcode ${noteData.retcode})`);
+      issues.push(classifyHoyoError({ retcode: noteData.retcode, message: noteData.message }));
     }
   } catch (err) {
     console.error("Error fetching dailyNote:", err);
     errorsOccurred.push(`Resin/Expeditions tracker failed to load: ${err.message}`);
+    issues.push(classifyHoyoError({ message: err.message, httpStatus: err.httpStatus }));
   }
 
   // 2. Fetch Check-In Status
@@ -651,10 +694,12 @@ async function handleRefresh() {
       }
     } else {
       errorsOccurred.push(`Character catalog: ${indexData.message} (retcode ${indexData.retcode})`);
+      issues.push(classifyHoyoError({ retcode: indexData.retcode, message: indexData.message }));
     }
   } catch (err) {
     console.error("Error fetching chronicle index:", err);
     errorsOccurred.push(`Adventure stats failed to load: ${err.message}`);
+    issues.push(classifyHoyoError({ message: err.message, httpStatus: err.httpStatus }));
   }
 
   // 4. Fetch Abyss
@@ -686,10 +731,20 @@ async function handleRefresh() {
   updateUI();
   flashCards();
 
-  // Show status banner
-  if (errorsOccurred.length > 0) {
-    showBanner(`Sync partially completed. Warnings: ${errorsOccurred.join(" | ")}`, "error");
+  // Show status banner — surface the single most important, actionable problem.
+  const primary = pickPrimaryIssue(issues);
+  if (primary) {
+    state.connectionIssue = primary.kind;
+    showBanner(primary.text, primary.kind === "network" ? "error" : "error");
+    // Auth problems: open Credentials so the fix is one step away.
+    if (primary.kind === "auth" || primary.kind === "privacy") {
+      openSettingsModal();
+    }
+  } else if (errorsOccurred.length > 0) {
+    state.connectionIssue = null;
+    showBanner(`Sync partially completed. Some optional data was unavailable.`, "info");
   } else {
+    state.connectionIssue = null;
     showBanner("Chronicle data sync completed successfully!", "success");
   }
 } finally {
@@ -968,7 +1023,20 @@ function appTimerLoop() {
   const syncLabel = document.getElementById('sync-status-label');
   const nextSyncEl = document.getElementById('next-sync-countdown');
 
-  if (state.lastSyncTime === 0) {
+  // A live connection problem takes priority over the "synced X ago" label so
+  // the user always knows when data is stale because something is broken.
+  if (state.connectionIssue) {
+    const labels = {
+      auth:      '⚠ Cookies expired',
+      network:   '⚠ HoYoLAB unreachable',
+      privacy:   '⚠ Chronicle private',
+      geetest:   '⚠ Verification needed',
+      ratelimit: '⚠ Daily limit hit',
+    };
+    syncDot.className = 'sync-dot old';
+    syncLabel.innerText = labels[state.connectionIssue] || '⚠ Sync problem';
+    if (nextSyncEl) nextSyncEl.innerText = '--:--';
+  } else if (state.lastSyncTime === 0) {
     syncDot.className = 'sync-dot waiting';
     syncLabel.innerText = 'No data yet';
     if (nextSyncEl) nextSyncEl.innerText = '--:--';
