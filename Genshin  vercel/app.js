@@ -3153,18 +3153,46 @@ async function renderMetaTab() {
   }
 }
 
+const META_CHAR_ICONS = {
+  'neuvillette':'Neuvillette','furina':'Furina','kaedehara kazuha':'Kazuha','kazuha':'Kazuha',
+  'baizhu':'Baizhu','zhongli':'Zhongli','charlotte':'Charlotte','arlecchino':'Arlecchino',
+  'yelan':'Yelan','bennett':'Bennett','xingqiu':'Xingqiu','navia':'Navia','xianyun':'Xianyun',
+  'chiori':'Chiori','albedo':'Albedo','alhaitham':'Alhaitham','nahida':'Nahida',
+  'kuki shinobu':'KukiShinobu','nilou':'Nilou','sangonomiya kokomi':'Kokomi','kokomi':'Kokomi',
+  'collei':'Collei','hu tao':'Hutao','xiangling':'Xiangling','thoma':'Thoma','kinich':'Kinich',
+  'emilie':'Emilie','dehya':'Dehya','mualani':'Mualani','kachina':'Kachina','sucrose':'Sucrose',
+  'raiden shogun':'Shougun','raiden':'Shougun','kujou sara':'Sara','sara':'Sara',
+  'chevreuse':'Chevreuse','chasca':'Chasca','wriothesley':'Wriothesley','ayaka':'Ayaka',
+  'clorinde':'Clorinde','cyno':'Cyno','gaming':'Gaming','klee':'Klee','lyney':'Lyney',
+  'venti':'Venti','itto':'Itto','diluc':'Diluc','ganyu':'Ganyu','ayato':'Ayato','kaveh':'Kaveh',
+  'razor':'Razor','xiao':'Xiao','wanderer':'Wanderer','eula':'Eula','keqing':'Keqing',
+  'ningguang':'Ningguang','noelle':'Noelle','sethos':'Sethos','tartaglia':'Tartaglia',
+  'tighnari':'Tighnari','yanfei':'Yanfei','yoimiya':'Yoimiya','fischl':'Fischl',
+  'yae':'Yae','yae miko':'Yae','beidou':'Beidou','ororon':'Ororon','rosaria':'Rosaria',
+  'lynette':'Lynette','citlali':'Citlali','xilonen':'Xilonen','shenhe':'Shenhe',
+  'sigewinne':'Sigewinne','mona':'Mona','faruzan':'Faruzan','jean':'Jean','gorou':'Gorou',
+  'layla':'Layla','diona':'Diona','yaoyao':'Yaoyao','kirara':'Kirara','mika':'Mika',
+  'sayu':'Sayu','yun jin':'Yunjin','qiqi':'Qiqi','lan yan':'Lanyan','mavuika':'Mavuika',
+  'varesa':'Varesa','escoffier':'Escoffier','columbina':'Columbina',
+  'yumemizuki mizuki':'Mizuki','mizuki':'Mizuki',
+};
+
+function getMetaCharIconUrl(charName) {
+  const key = META_CHAR_ICONS[charName.toLowerCase()];
+  return key ? `https://gi.yatta.moe/assets/UI/UI_AvatarIcon_${key}.png` : '';
+}
+
 function evaluateCharForMeta(charName, ownedCharsMap, iconMap = {}) {
-  const BUILD_THRESHOLDS = { level: 80, keyTalent: 8 }; // Re-declare since we deleted metaData.js
+  const BUILD_THRESHOLDS = { level: 80, keyTalent: 8 };
   const c = ownedCharsMap[charName.toLowerCase()];
+  const fallbackIcon = getMetaCharIconUrl(charName) || iconMap[charName] || '';
   if (!c) {
-    return { status: "missing", built: false, statusText: "Not Owned", icon: iconMap[charName] || "" };
+    return { status: "missing", built: false, statusText: "Not Owned", icon: fallbackIcon };
   }
-  
-  // Found character. Check details if available.
+
   let isBuilt = false;
   let statusText = "Owned";
-  
-  // Basic check: Level
+
   if (c.level >= BUILD_THRESHOLDS.level) {
     isBuilt = true;
     statusText = "Owned & Leveled";
@@ -3172,7 +3200,6 @@ function evaluateCharForMeta(charName, ownedCharsMap, iconMap = {}) {
     statusText = "Needs Leveling (Lv " + c.level + ")";
   }
 
-  // Check deeper details if we have them
   const detail = state.characterDetails[c.id];
   if (detail) {
     const hasHighTalent = detail.skills && detail.skills.some(s => s.level >= BUILD_THRESHOLDS.keyTalent);
@@ -3189,7 +3216,7 @@ function evaluateCharForMeta(charName, ownedCharsMap, iconMap = {}) {
     status: isBuilt ? "owned-built" : "owned-unbuilt",
     built: isBuilt,
     statusText,
-    icon: c.icon
+    icon: c.image || c.icon || fallbackIcon
   };
 }
 
