@@ -1,4 +1,4 @@
-﻿// Teyvat Chrono Dashboard Controller Logic
+// Teyvat Chrono Dashboard Controller Logic
 
 // Official element SVG paths extracted from genshin-optimizer (frzyc/genshin-optimizer, MIT)
 const ELEMENT_ICONS = {
@@ -2969,3 +2969,199 @@ function updateDomainSchedule(dayIndex) {
     alertsBox.classList.add("hidden");
   }
 }
+
+// --- META TRACKER LOGIC ---
+let cachedMetaData = null;
+
+async function renderMetaTab() {
+  const grid = document.getElementById("meta-teams-grid");
+  const priorityList = document.getElementById("meta-build-priority");
+  if (!grid || !priorityList) return;
+
+  if (!cachedMetaData) {
+    try {
+      const res = await fetch('metaData.json');
+      if (res.ok) cachedMetaData = await res.json();
+    } catch(e) {
+      console.error("Failed to fetch metaData.json", e);
+    }
+  }
+  
+  const metaData = cachedMetaData;
+  if (!metaData) return;
+
+  grid.innerHTML = "";
+  priorityList.innerHTML = "";
+
+  // Helper arrays for Roles
+  const dpsList = document.getElementById("meta-role-main-dps");
+  const subDpsList = document.getElementById("meta-role-sub-dps");
+  const supportList = document.getElementById("meta-role-support");
+  if (dpsList) dpsList.innerHTML = "";
+  if (subDpsList) subDpsList.innerHTML = "";
+  if (supportList) supportList.innerHTML = "";
+
+  if (!state.characters || state.characters.length === 0) {
+    priorityList.innerHTML = "<p class='empty-text'>Sync data to see meta analysis.</p>";
+    return;
+  }
+
+  // Create a map for quick char lookup
+  const ownedChars = {};
+  state.characters.forEach(c => {
+    ownedChars[c.name.toLowerCase()] = c;
+    const fallbackName = parseCharacterNameFromIcon(c.icon).toLowerCase();
+    if (fallbackName && fallbackName !== "character") {
+        ownedChars[fallbackName] = c;
+    }
+  });
+
+  let totalSlots = 0;
+  let builtSlots = 0;
+  
+  const charScores = {}; // To determine build priority
+
+  // Render Teams
+  metaData.teams.forEach(team => {
+    const card = document.createElement("div");
+    card.className = "meta-team-card";
+    
+    let html = `<h3><span class="meta-team-tier">${team.tier}</span> ${team.name}</h3>`;
+    html += `<div class="meta-team-roster">`;
+
+    // Core
+    team.core.forEach(charName => {
+      totalSlots++;
+      const res = evaluateCharForMeta(charName, ownedChars);
+      if (res.built) builtSlots++;
+      
+      // Track for priority
+      if (!charScores[charName]) charScores[charName] = { name: charName, score: 0, reason: "", missing: false, unbuilt: false, icon: "" };
+      charScores[charName].score += (res.status === 'missing' ? 2 : (res.status === 'owned-unbuilt' ? 3 : 0));
+      if (res.status === 'missing') charScores[charName].missing = true;
+      if (res.status === 'owned-unbuilt') charScores[charName].unbuilt = true;
+      if (res.icon) charScores[charName].icon = res.icon;
+
+      html += `<div class="meta-char-slot ${res.status}" title="${charName} - ${res.statusText}">
+                 <img src="${res.icon || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'}" alt="${charName}">
+               </div>`;
+    });
+
+    html += `</div>`;
+    card.innerHTML = html;
+    grid.appendChild(card);
+  });
+
+  // Calculate Alignment
+  const alignmentPercent = totalSlots > 0 ? Math.round((builtSlots / totalSlots) * 100) : 0;
+  const scoreEl = document.getElementById("meta-alignment-score");
+  if(scoreEl) scoreEl.innerText = alignmentPercent + "%";
+  
+  const fillCircle = document.getElementById("meta-alignment-fill");
+  if (fillCircle) {
+    const offset = 283 - (283 * alignmentPercent) / 100;
+    fillCircle.style.strokeDashoffset = offset;
+  }
+
+  // Render Priority Queue
+  const priorities = Object.values(charScores)
+    .filter(c => c.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5); // top 5
+  
+  if (priorities.length === 0) {
+    priorityList.innerHTML = "<p class='empty-text text-green'>Your meta teams are fully built!</p>";
+  } else {
+    priorities.forEach(p => {
+      let reasonText = "";
+      if (p.unbuilt) reasonText = "Owned but under-invested. Priority to level/talent up.";
+      else if (p.missing) reasonText = "High value meta pull. Keep an eye on banners.";
+      
+      priorityList.innerHTML += `
+        <div class="priority-item">
+          <div class="priority-char-info">
+            <img src="${p.icon || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'}" alt="${p.name}">
+            <div class="priority-details">
+              <span class="priority-name">${p.name}</span>
+              <span class="priority-reason">${reasonText}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  // Render Roles
+  if (metaData.roles && dpsList) {
+    const renderRoleList = (roleArray, container) => {
+      if(!roleArray) return;
+      // Show top 8 max
+      roleArray.slice(0, 8).forEach(char => {
+        const res = evaluateCharForMeta(char.name, ownedChars);
+        container.innerHTML += `
+          <div class="meta-role-item ${res.status}" title="${char.name} - ${res.statusText}">
+            <img class="role-char-icon" src="${res.icon || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'}" alt="${char.name}">
+            <div class="role-char-info">
+              <span class="role-char-name">${char.name}</span>
+              <span class="role-char-tier">Tier ${char.tier}</span>
+            </div>
+          </div>
+        `;
+      });
+    };
+
+    renderRoleList(metaData.roles["Main DPS"], dpsList);
+    renderRoleList(metaData.roles["Sub DPS"], subDpsList);
+    renderRoleList(metaData.roles["Support"], supportList);
+  }
+}
+
+function evaluateCharForMeta(charName, ownedCharsMap) {
+  const BUILD_THRESHOLDS = { level: 80, keyTalent: 8 }; // Re-declare since we deleted metaData.js
+  const c = ownedCharsMap[charName.toLowerCase()];
+  if (!c) {
+    return { status: "missing", built: false, statusText: "Not Owned", icon: "" };
+  }
+  
+  // Found character. Check details if available.
+  let isBuilt = false;
+  let statusText = "Owned";
+  
+  // Basic check: Level
+  if (c.level >= BUILD_THRESHOLDS.level) {
+    isBuilt = true;
+    statusText = "Owned & Leveled";
+  } else {
+    statusText = "Needs Leveling (Lv " + c.level + ")";
+  }
+
+  // Check deeper details if we have them
+  const detail = state.characterDetails[c.id];
+  if (detail) {
+    const hasHighTalent = detail.skills && detail.skills.some(s => s.level >= BUILD_THRESHOLDS.keyTalent);
+    if (!hasHighTalent) {
+      isBuilt = false;
+      statusText = "Needs Talent upgrades";
+    } else {
+      isBuilt = true;
+      statusText = "Owned & Built";
+    }
+  }
+
+  return {
+    status: isBuilt ? "owned-built" : "owned-unbuilt",
+    built: isBuilt,
+    statusText,
+    icon: c.icon
+  };
+}
+
+// Hook into updateUI
+const originalUpdateUI = window.updateUI || updateUI;
+window.updateUI = function() {
+  if (typeof originalUpdateUI === 'function') originalUpdateUI();
+  renderMetaTab();
+};
+// Overwrite the local function reference so internal calls use the hooked version
+updateUI = window.updateUI;
+

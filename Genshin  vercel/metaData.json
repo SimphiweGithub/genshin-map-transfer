@@ -1,0 +1,754 @@
+{
+  "lastUpdated": "2026-07-09T12:08:37.284Z",
+  "teams": [
+    {
+      "id": "neuv_hyper",
+      "name": "Neuvillette Hypercarry",
+      "tier": "S+",
+      "score": 20,
+      "core": [
+        "Neuvillette",
+        "Furina",
+        "Kaedehara Kazuha"
+      ],
+      "flex": [
+        "Baizhu",
+        "Zhongli",
+        "Charlotte"
+      ]
+    },
+    {
+      "id": "arle_vape",
+      "name": "Arlecchino Vape",
+      "tier": "S+",
+      "score": 19,
+      "core": [
+        "Arlecchino",
+        "Yelan",
+        "Bennett"
+      ],
+      "flex": [
+        "Zhongli",
+        "Kaedehara Kazuha",
+        "Xingqiu"
+      ]
+    },
+    {
+      "id": "navia_plunge",
+      "name": "Navia Plunge",
+      "tier": "S+",
+      "score": 18,
+      "core": [
+        "Navia",
+        "Xianyun",
+        "Furina"
+      ],
+      "flex": [
+        "Zhongli",
+        "Chiori",
+        "Albedo"
+      ]
+    },
+    {
+      "id": "alhaitham_quickbloom",
+      "name": "Alhaitham Quickbloom",
+      "tier": "S",
+      "score": 16,
+      "core": [
+        "Alhaitham",
+        "Nahida",
+        "Kuki Shinobu"
+      ],
+      "flex": [
+        "Yelan",
+        "Xingqiu",
+        "Furina"
+      ]
+    },
+    {
+      "id": "nilou_bloom",
+      "name": "Nilou Bloom",
+      "tier": "S",
+      "score": 15,
+      "core": [
+        "Nilou",
+        "Nahida",
+        "Sangonomiya Kokomi"
+      ],
+      "flex": [
+        "Baizhu",
+        "Collei",
+        "Dendro Traveler"
+      ]
+    },
+    {
+      "id": "hutao_vape",
+      "name": "Hu Tao Double Hydro",
+      "tier": "S",
+      "score": 14,
+      "core": [
+        "Hu Tao",
+        "Yelan",
+        "Xingqiu"
+      ],
+      "flex": [
+        "Zhongli",
+        "Xiangling",
+        "Thoma"
+      ]
+    },
+    {
+      "id": "kinich_burgeon",
+      "name": "Kinich Burgeon",
+      "tier": "S",
+      "score": 14,
+      "core": [
+        "Kinich",
+        "Emilie",
+        "Bennett"
+      ],
+      "flex": [
+        "Thoma",
+        "Dehya",
+        "Xiangling"
+      ]
+    },
+    {
+      "id": "mualani_vape",
+      "name": "Mualani Vape",
+      "tier": "S",
+      "score": 14,
+      "core": [
+        "Mualani",
+        "Emilie",
+        "Xiangling"
+      ],
+      "flex": [
+        "Kachina",
+        "Zhongli",
+        "Sucrose"
+      ]
+    },
+    {
+      "id": "raiden_hyper",
+      "name": "Raiden Hypercarry",
+      "tier": "A",
+      "score": 10,
+      "core": [
+        "Raiden Shogun",
+        "Kujou Sara",
+        "Kaedehara Kazuha",
+        "Bennett"
+      ],
+      "flex": [
+        "Chevreuse"
+      ]
+    },
+    {
+      "id": "raiden_national",
+      "name": "Raiden National",
+      "tier": "A",
+      "score": 8,
+      "core": [
+        "Raiden Shogun",
+        "Xiangling",
+        "Xingqiu",
+        "Bennett"
+      ],
+      "flex": []
+    }
+  ],
+  "roles": {
+    "Main DPS": [
+      {
+        "name": "Flins",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Lohen",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Mavuika",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Nefer",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Neuvillette",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Sandrone",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Skirk",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Varka",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Zibai",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Arlecchino",
+        "tier": "S+",
+        "score": 17
+      },
+      {
+        "name": "Chasca",
+        "tier": "S+",
+        "score": 17
+      },
+      {
+        "name": "Kinich",
+        "tier": "S+",
+        "score": 17
+      },
+      {
+        "name": "Varesa",
+        "tier": "S",
+        "score": 17
+      },
+      {
+        "name": "Wriothesley",
+        "tier": "S+",
+        "score": 17
+      },
+      {
+        "name": "Ayaka",
+        "tier": "S+",
+        "score": 14
+      },
+      {
+        "name": "Clorinde",
+        "tier": "S+",
+        "score": 14
+      },
+      {
+        "name": "Hu Tao",
+        "tier": "S+",
+        "score": 14
+      },
+      {
+        "name": "Mualani",
+        "tier": "S+",
+        "score": 14
+      },
+      {
+        "name": "Navia",
+        "tier": "S+",
+        "score": 14
+      },
+      {
+        "name": "Cyno",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Durin",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Gaming",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Klee",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Lyney",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Venti",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Alhaitham",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Itto",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Diluc",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Ganyu",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Ayato",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Kaveh",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Raiden Shogun",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Razor",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Xiao",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Wanderer",
+        "tier": "A",
+        "score": 6
+      },
+      {
+        "name": "Eula",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Keqing",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Ningguang",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Noelle",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Sethos",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Tartaglia",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Tighnari",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Yanfei",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Yoimiya",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Yumemizuki Mizuki",
+        "tier": "A",
+        "score": 2
+      }
+    ],
+    "Sub DPS": [
+      {
+        "name": "Durin",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Escoffier",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Furina",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Ineffa",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Fischl",
+        "tier": "S+",
+        "score": 17
+      },
+      {
+        "name": "Venti",
+        "tier": "S+",
+        "score": 17
+      },
+      {
+        "name": "Yelan",
+        "tier": "S",
+        "score": 17
+      },
+      {
+        "name": "Albedo",
+        "tier": "S+",
+        "score": 14
+      },
+      {
+        "name": "Nahida",
+        "tier": "S+",
+        "score": 14
+      },
+      {
+        "name": "Xingqiu",
+        "tier": "S+",
+        "score": 14
+      },
+      {
+        "name": "Chiori",
+        "tier": "S",
+        "score": 11
+      },
+      {
+        "name": "Columbina",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Lauma",
+        "tier": "A",
+        "score": 10
+      },
+      {
+        "name": "Linnea",
+        "tier": "A",
+        "score": 10
+      },
+      {
+        "name": "Mavuika",
+        "tier": "A",
+        "score": 10
+      },
+      {
+        "name": "Nilou",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Xiangling",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Yae",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Raiden",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Beidou",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Emilie",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Ororon",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Raiden Shogun",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Rosaria",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Kuki Shinobu",
+        "tier": "A",
+        "score": 4
+      },
+      {
+        "name": "Dendro Traveler",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Kachina",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Lynette",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Pyro Traveler",
+        "tier": "A",
+        "score": 2
+      }
+    ],
+    "Support": [
+      {
+        "name": "Bennett",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Citlali",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Kazuha",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Nicole",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Xilonen",
+        "tier": "S+",
+        "score": 20
+      },
+      {
+        "name": "Illuga",
+        "tier": "S+",
+        "score": 17
+      },
+      {
+        "name": "Prune",
+        "tier": "S+",
+        "score": 17
+      },
+      {
+        "name": "Shenhe",
+        "tier": "S+",
+        "score": 17
+      },
+      {
+        "name": "Sucrose",
+        "tier": "S",
+        "score": 17
+      },
+      {
+        "name": "Zhongli",
+        "tier": "S+",
+        "score": 17
+      },
+      {
+        "name": "Aino",
+        "tier": "S",
+        "score": 14
+      },
+      {
+        "name": "Sigewinne",
+        "tier": "S",
+        "score": 14
+      },
+      {
+        "name": "Iansan",
+        "tier": "S+",
+        "score": 14
+      },
+      {
+        "name": "Kokomi",
+        "tier": "S+",
+        "score": 14
+      },
+      {
+        "name": "Mona",
+        "tier": "S+",
+        "score": 14
+      },
+      {
+        "name": "Xianyun",
+        "tier": "S+",
+        "score": 14
+      },
+      {
+        "name": "Baizhu",
+        "tier": "S",
+        "score": 11
+      },
+      {
+        "name": "Faruzan",
+        "tier": "S",
+        "score": 11
+      },
+      {
+        "name": "Lauma",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Linnea",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Columbina",
+        "tier": "A",
+        "score": 10
+      },
+      {
+        "name": "Furina",
+        "tier": "A",
+        "score": 10
+      },
+      {
+        "name": "Chevreuse",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Nahida",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Qiqi",
+        "tier": "S+",
+        "score": 10
+      },
+      {
+        "name": "Diona",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Gorou",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Ifa",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Jahoda",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Jean",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Kujou Sara",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Kuki Shinobu",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Layla",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Venti",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Yaoyao",
+        "tier": "S",
+        "score": 7
+      },
+      {
+        "name": "Charlotte",
+        "tier": "A",
+        "score": 6
+      },
+      {
+        "name": "Nilou",
+        "tier": "A",
+        "score": 4
+      },
+      {
+        "name": "Kirara",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Lan Yan",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Mika",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Sayu",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Thoma",
+        "tier": "A",
+        "score": 2
+      },
+      {
+        "name": "Yun Jin",
+        "tier": "A",
+        "score": 2
+      }
+    ]
+  }
+}
