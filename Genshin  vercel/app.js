@@ -192,6 +192,7 @@ let state = {
   abyss: null, // from Abyss
   ledger: null, // from YsLedger
   expeditions: [], // from Daily Notes
+  characterDetails: {}, // from batch characterDetail — keyed by char id
 
   // Checkin info
   checkinDaysCount: 0,
@@ -720,6 +721,30 @@ async function handleRefresh() {
     }
   } catch (err) {
     console.error("Error fetching ysLedger:", err);
+  }
+
+  // 6. Batch-fetch character details (talents, weapon, artifacts) for build tools
+  if (state.characters && state.characters.length > 0) {
+    try {
+      const ids = state.characters.map(c => c.id).join(',');
+      const qs = new URLSearchParams({
+        action: 'characterDetail',
+        uid: state.uid, server: state.server,
+        ltoken: state.ltoken, ltuid: state.ltuid,
+        character_ids: ids
+      });
+      const detailResp = await fetch(`/api/hoyolab?${qs}`);
+      const detailData = await detailResp.json();
+      if (detailData.retcode === 0 && detailData.data?.list) {
+        state.characterDetails = {};
+        for (const d of detailData.data.list) {
+          const cid = d.base?.id || d.id;
+          if (cid) state.characterDetails[cid] = d;
+        }
+      }
+    } catch (err) {
+      console.warn('Character detail batch fetch failed:', err.message);
+    }
   }
 
   // Record sync time
@@ -1395,6 +1420,7 @@ function updateUI() {
 
   // Characters Catalog UI
   updateCharactersCatalogUI();
+  renderBuildPriorities();
 
   // Exploration Map UI
   updateOculiTracker();
@@ -1585,10 +1611,12 @@ window.showCharDetail = function(idx) {
   document.getElementById('char-detail-fetter').innerHTML =
     `<span title="Friendship ${char.fetter}/10">${friendshipHearts(char.fetter)}</span>`;
 
-  // Show loading state for weapon/artifacts, then fetch
+  // Show loading state for talents/weapon/artifacts, then fetch
+  const talentsEl = document.getElementById('char-detail-talents');
   const wpnRow   = document.getElementById('char-detail-weapon-row');
   const slots    = document.getElementById('char-detail-artifact-slots');
   const setBonuses = document.getElementById('char-detail-set-bonuses');
+  talentsEl.innerHTML = `<p class="empty-text" style="opacity:.5">Loading…</p>`;
   wpnRow.innerHTML   = `<p class="empty-text" style="opacity:.5">Loading…</p>`;
   slots.innerHTML    = `<p class="empty-text" style="opacity:.5">Loading…</p>`;
   setBonuses.innerHTML = '';
@@ -1597,8 +1625,13 @@ window.showCharDetail = function(idx) {
   document.getElementById('char-detail-overlay').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
 
-  // Fetch detailed weapon + artifact data
-  if (state.uid && state.server && state.ltoken && state.ltuid) {
+  // Use cached detail data if available, otherwise fetch
+  const cached = state.characterDetails?.[char.id];
+  if (cached) {
+    renderCharTalents(talentsEl, cached.skills || []);
+    renderCharWeapon(wpnRow, cached.weapon);
+    renderCharArtifacts(slots, setBonuses, cached.relics || []);
+  } else if (state.uid && state.server && state.ltoken && state.ltuid) {
     const qs = new URLSearchParams({
       action: 'characterDetail',
       uid: state.uid, server: state.server,
@@ -1610,14 +1643,18 @@ window.showCharDetail = function(idx) {
       .then(resp => {
         const detail = (resp.data?.list || [])[0];
         if (!detail) return;
+        if (char.id) state.characterDetails[char.id] = detail;
+        renderCharTalents(talentsEl, detail.skills || []);
         renderCharWeapon(wpnRow, detail.weapon);
         renderCharArtifacts(slots, setBonuses, detail.relics || []);
       })
       .catch(() => {
+        talentsEl.innerHTML = `<p class="empty-text">Failed to load</p>`;
         wpnRow.innerHTML   = `<p class="empty-text">Failed to load</p>`;
         slots.innerHTML    = `<p class="empty-text">Failed to load</p>`;
       });
   } else {
+    talentsEl.innerHTML = `<p class="empty-text">Connect credentials to see talent data</p>`;
     wpnRow.innerHTML = `<p class="empty-text">Connect credentials to see weapon data</p>`;
     slots.innerHTML  = `<p class="empty-text">Connect credentials to see artifact data</p>`;
   }
@@ -1676,6 +1713,140 @@ function renderCharArtifacts(slots, setBonuses, relics) {
     bonusHtml += `<span class="set-bonus-chip"><span class="set-pc">${pc}</span> ${setName}</span>`;
   });
   setBonuses.innerHTML = bonusHtml;
+}
+
+function renderCharTalents(container, skills) {
+  if (!skills || !skills.length) {
+    container.innerHTML = `<p class="empty-text">No talent data</p>`;
+    return;
+  }
+  const mainSkills = skills.filter(s =>
+    s.skill_type === 1 || s.skill_type === 2 || s.skill_type === 3 ||
+    (!s.skill_type && skills.indexOf(s) < 3)
+  ).slice(0, 3);
+  if (!mainSkills.length) {
+    container.innerHTML = `<p class="empty-text">No talent data</p>`;
+    return;
+  }
+  container.innerHTML = mainSkills.map(s => {
+    const lvl = s.level_current || s.level || 0;
+    const max = s.max_level || 15;
+    const cls = lvl >= 10 ? 'maxed' : lvl >= 8 ? 'high' : lvl >= 6 ? 'mid' : 'low';
+    const icon = s.icon ? `<img src="${s.icon}" alt="" onerror="this.style.display='none'">` : '';
+    return `
+      <div class="talent-pill">
+        ${icon}
+        <div class="talent-info">
+          <span class="talent-name" title="${s.name || ''}">${s.name || 'Talent'}</span>
+          <span class="talent-level ${cls}">Lv. ${lvl}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderBuildPriorities() {
+  const card = document.getElementById('build-priorities-card');
+  const list = document.getElementById('build-priorities-list');
+  if (!card || !list) return;
+
+  if (!state.characters || state.characters.length === 0 || !state.characterDetails || Object.keys(state.characterDetails).length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+
+  const rows = state.characters.map(c => {
+    const d = state.characterDetails[c.id];
+    const tags = [];
+    let score = 0;
+
+    // Level gap
+    const maxLvl = c.rarity >= 5 ? 90 : 80;
+    if (c.level < maxLvl) {
+      const gap = maxLvl - c.level;
+      score += gap;
+      if (gap > 20) tags.push({ text: `Lv.${c.level}→${maxLvl}`, cls: '' });
+      else tags.push({ text: `Lv.${c.level}→${maxLvl}`, cls: 'warn' });
+    }
+
+    if (d) {
+      // Talent gaps
+      const skills = (d.skills || []).filter(s =>
+        s.skill_type === 1 || s.skill_type === 2 || s.skill_type === 3 ||
+        (!s.skill_type && (d.skills || []).indexOf(s) < 3)
+      ).slice(0, 3);
+      const talentLevels = skills.map(s => s.level_current || s.level || 0);
+      const minTalent = talentLevels.length ? Math.min(...talentLevels) : 0;
+      if (minTalent < 8 && talentLevels.length) {
+        score += (8 - minTalent) * 5;
+        tags.push({ text: `Talents ${talentLevels.join('/')}`, cls: minTalent < 6 ? '' : 'warn' });
+      }
+
+      // Weapon level
+      if (d.weapon) {
+        const wLvl = d.weapon.level || 0;
+        if (wLvl < 80) {
+          score += Math.floor((90 - wLvl) / 2);
+          tags.push({ text: `Wpn Lv.${wLvl}`, cls: wLvl < 60 ? '' : 'warn' });
+        }
+      }
+
+      // Artifact completeness
+      const relics = d.relics || [];
+      const empty = 5 - relics.length;
+      if (empty > 0) {
+        score += empty * 8;
+        tags.push({ text: `${empty} empty slot${empty > 1 ? 's' : ''}`, cls: '' });
+      }
+      const underleveled = relics.filter(r => (r.level || 0) < 16).length;
+      if (underleveled > 0 && empty === 0) {
+        score += underleveled * 3;
+        tags.push({ text: `${underleveled} artif. <+16`, cls: 'warn' });
+      }
+    } else {
+      tags.push({ text: 'No detail data', cls: 'warn' });
+    }
+
+    if (tags.length === 0) {
+      tags.push({ text: 'Built', cls: 'ok' });
+    }
+
+    // Weight 5-star characters higher
+    if (c.rarity >= 5) score = Math.ceil(score * 1.2);
+
+    return { char: c, tags, score };
+  });
+
+  // Sort by score descending — characters needing most work first
+  rows.sort((a, b) => b.score - a.score);
+
+  // Only show characters that actually need work (score > 0), cap at 15
+  const needsWork = rows.filter(r => r.score > 0).slice(0, 15);
+  const built = rows.filter(r => r.score === 0).length;
+
+  if (needsWork.length === 0) {
+    list.innerHTML = `<p class="empty-text" style="color:#74c2a0">All ${built} characters are fully built!</p>`;
+    return;
+  }
+
+  const idx = (c) => _detailChars.findIndex(dc => dc.id === c.id);
+  list.innerHTML = needsWork.map(r => {
+    const c = r.char;
+    const name = getCharDisplayName(c);
+    const scoreCls = r.score >= 30 ? 'needs-work' : r.score >= 10 ? 'almost' : 'built';
+    const avatarUrl = c.image || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
+    const tagsHtml = r.tags.map(t => `<span class="build-tag ${t.cls}">${t.text}</span>`).join('');
+    const i = idx(c);
+    return `
+      <div class="build-row" onclick="showCharDetail(${i})" title="Click to see ${name}'s details">
+        <img class="build-row-avatar" src="${avatarUrl}" alt="${name}" onerror="this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
+        <div class="build-row-info">
+          <span class="build-row-name">${name}</span>
+          <div class="build-row-tags">${tagsHtml}</div>
+        </div>
+        <span class="build-row-score ${scoreCls}">${r.score}</span>
+      </div>`;
+  }).join('') + (built > 0 ? `<p class="empty-text" style="margin-top:6px;font-size:.75rem;color:#74c2a0">+ ${built} fully built character${built > 1 ? 's' : ''}</p>` : '');
 }
 
 window.closeCharDetail = function() {

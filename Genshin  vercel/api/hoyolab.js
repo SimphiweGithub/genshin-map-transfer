@@ -29,7 +29,7 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const { action, uid, server, ltoken, ltuid, schedule_type, character_id } = req.query;
+  const { action, uid, server, ltoken, ltuid, schedule_type, character_id, character_ids } = req.query;
 
   if (!action) {
     return res.status(400).json({ retcode: -1, message: 'Missing parameter: action is required' });
@@ -77,8 +77,11 @@ module.exports = async (req, res) => {
         url = `https://bbs-api-os.hoyolab.com/game_record/genshin/api/character/detail`;
         method = 'POST';
         headers['Content-Type'] = 'application/json';
+        const ids = character_ids
+          ? character_ids.split(',').map(Number)
+          : [parseInt(character_id)];
         const cdBody = JSON.stringify({
-          character_ids: [parseInt(character_id)],
+          character_ids: ids,
           role_id: uid,
           server
         });
