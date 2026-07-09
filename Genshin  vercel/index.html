@@ -619,9 +619,10 @@
     <!-- META TRACKER TAB -->
     <section id="tab-meta" class="tab-panel">
       <div class="dashboard-grid">
+
         <div class="card glass-card col-span-full">
           <div class="card-header">
-            <h2>Account Meta Alignment</h2>
+            <h2>Meta Alignment</h2>
           </div>
           <div class="meta-alignment-summary">
             <div class="alignment-score-circle">
@@ -631,50 +632,31 @@
               </svg>
               <div class="score-text">
                 <span id="meta-alignment-score">0%</span>
-                <span class="lbl">Aligned</span>
+                <span class="lbl">Built</span>
               </div>
             </div>
             <div class="alignment-details">
-              <p>Your roster is evaluated against current top-tier Abyss teams. Characters you own in these teams, along with their build investment (Level 80+, Talents 8+), contribute to your overall alignment score.</p>
+              <p>Percentage of S+/S tier characters you own that are fully built (Lv 80+, Talents 8+). Rankings sourced live from <a href="https://www.icy-veins.com/genshin-impact/tier-list" target="_blank" rel="noopener noreferrer" style="color:#c9a56e;">icy-veins.com</a>.</p>
             </div>
           </div>
         </div>
 
         <div class="card glass-card col-span-full">
           <div class="card-header">
-            <h2>Build Priority Queue</h2>
+            <h2>Build Roadmap</h2>
           </div>
-          <div id="meta-build-priority" class="build-priority-list">
-            <p class="empty-text">Fetch data to generate build priorities.</p>
-          </div>
-        </div>
-
-        <div class="card glass-card col-span-full">
-          <div class="card-header">
-            <h2>Certified OP Teams</h2>
-          </div>
-          <div id="meta-teams-grid" class="meta-teams-grid">
-            <!-- Dynamically populated -->
+          <div id="meta-build-priority">
+            <p class="empty-text">Fetch data to generate your build roadmap.</p>
           </div>
         </div>
 
         <div class="card glass-card col-span-full">
           <div class="card-header">
-            <h2>Top Tier Individual Roles</h2>
+            <h2>Tier List</h2>
+            <a href="https://www.icy-veins.com/genshin-impact/tier-list" target="_blank" rel="noopener noreferrer" class="tier-source-btn">Full list on icy-veins.com ↗</a>
           </div>
-          <div class="meta-roles-container">
-            <div class="meta-role-column">
-              <h3 class="meta-role-title">Main DPS</h3>
-              <div id="meta-role-main-dps" class="meta-role-list"></div>
-            </div>
-            <div class="meta-role-column">
-              <h3 class="meta-role-title">Sub DPS</h3>
-              <div id="meta-role-sub-dps" class="meta-role-list"></div>
-            </div>
-            <div class="meta-role-column">
-              <h3 class="meta-role-title">Support</h3>
-              <div id="meta-role-support" class="meta-role-list"></div>
-            </div>
+          <div id="meta-tier-table">
+            <p class="empty-text">Loading tier data…</p>
           </div>
         </div>
 
@@ -822,7 +804,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=14"></script>
+  <script src="app.js?v=15"></script>
 </body>
 </html>
 

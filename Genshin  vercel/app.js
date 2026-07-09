@@ -2996,170 +2996,199 @@ function updateDomainSchedule(dayIndex) {
 }
 
 // --- META TRACKER LOGIC ---
-let cachedMetaData = null;
+let cachedLiveRoles = null;
 
-async function renderMetaTab() {
-  const grid = document.getElementById("meta-teams-grid");
-  const priorityList = document.getElementById("meta-build-priority");
-  if (!grid || !priorityList) return;
+// Aggregate icy-veins roles into per-character meta data and compute build roadmap
+function buildMetaRoadmap(roles, ownedCharsMap) {
+  const charMeta = {};
+  Object.entries(roles).forEach(([roleName, chars]) => {
+    chars.forEach(c => {
+      if (!charMeta[c.name]) charMeta[c.name] = { name: c.name, maxScore: 0, maxTier: '', roles: [], iconUrl: c.iconUrl || '' };
+      if (c.score > charMeta[c.name].maxScore) {
+        charMeta[c.name].maxScore = c.score;
+        charMeta[c.name].maxTier = c.tier;
+        charMeta[c.name].iconUrl = c.iconUrl || charMeta[c.name].iconUrl;
+      }
+      charMeta[c.name].roles.push(`${c.tier} ${roleName}`);
+    });
+  });
 
-  if (!cachedMetaData) {
-    try {
-      const res = await fetch('metaData.json');
-      if (res.ok) cachedMetaData = await res.json();
-    } catch(e) {
-      console.error("Failed to fetch metaData.json", e);
+  const buildNow = [], pullTargets = [];
+  let builtCount = 0, totalOwned = 0;
+
+  Object.values(charMeta).forEach(c => {
+    if (c.maxScore < 7) return; // A tier minimum
+    const owned = ownedCharsMap[c.name.toLowerCase()];
+    if (owned) {
+      if (c.maxScore >= 14) { // S or S+ only for alignment score
+        totalOwned++;
+        const res = evaluateCharForMeta(c.name, ownedCharsMap, {});
+        if (res.built) {
+          builtCount++;
+        } else {
+          // Urgency: higher tier = more urgent; versatility bonus for multi-role
+          buildNow.push({ ...c, urgency: Math.round(c.maxScore * 1.5 + c.roles.length * 3), statusText: res.statusText });
+        }
+      } else {
+        // A-tier owned-unbuilt still worth showing
+        const res = evaluateCharForMeta(c.name, ownedCharsMap, {});
+        if (!res.built) {
+          buildNow.push({ ...c, urgency: Math.round(c.maxScore * 1.2 + c.roles.length * 2), statusText: res.statusText });
+        }
+      }
+    } else if (c.maxScore >= 14) { // Only S+/S as pull targets
+      pullTargets.push({ ...c, urgency: c.maxScore + c.roles.length * 2 });
     }
-  }
+  });
 
-  const metaData = cachedMetaData;
-  if (!metaData) return;
+  buildNow.sort((a, b) => b.urgency - a.urgency);
+  pullTargets.sort((a, b) => b.urgency - a.urgency);
+  return { buildNow: buildNow.slice(0, 10), pullTargets: pullTargets.slice(0, 10), builtCount, totalOwned };
+}
 
-  // Try live icy-veins roles; merge over static metaData.json roles on success
-  try {
-    const liveRes = await fetch('/api/meta-scrape');
-    if (liveRes.ok) {
-      const live = await liveRes.json();
-      if (live.roles) metaData.roles = live.roles;
-    }
-  } catch (_) {}
+function renderMetaTierTable(container, roles, ownedCharsMap) {
+  const TIERS = ['S+', 'S', 'A'];
+  const TIER_CLS = { 'S+': 't-splus', 'S': 't-s', 'A': 't-a', 'B': 't-b' };
+  const ROLE_COLS = ['Main DPS', 'Sub DPS', 'Support'];
 
-  grid.innerHTML = "";
-  priorityList.innerHTML = "";
+  // Build tier × role matrix
+  const matrix = {};
+  TIERS.forEach(t => { matrix[t] = {}; ROLE_COLS.forEach(r => matrix[t][r] = []); });
+  ROLE_COLS.forEach(role => {
+    (roles[role] || []).forEach(c => { if (matrix[c.tier]) matrix[c.tier][role].push(c); });
+  });
 
-  // Helper arrays for Roles
-  const dpsList = document.getElementById("meta-role-main-dps");
-  const subDpsList = document.getElementById("meta-role-sub-dps");
-  const supportList = document.getElementById("meta-role-support");
-  if (dpsList) dpsList.innerHTML = "";
-  if (subDpsList) subDpsList.innerHTML = "";
-  if (supportList) supportList.innerHTML = "";
+  let html = `<div class="meta-tier-wrap"><div class="meta-tier-grid">`;
+  // Column headers
+  html += `<div class="meta-tier-col-header"></div>`;
+  ROLE_COLS.forEach(r => html += `<div class="meta-tier-col-header">${r}</div>`);
 
-  if (!state.characters || state.characters.length === 0) {
-    priorityList.innerHTML = "<p class='empty-text'>Sync data to see meta analysis.</p>";
+  TIERS.forEach(tier => {
+    html += `<div class="meta-tier-row">`;
+    html += `<div class="meta-tier-label ${TIER_CLS[tier] || ''}">${tier}</div>`;
+    ROLE_COLS.forEach(role => {
+      html += `<div class="meta-tier-cell">`;
+      matrix[tier][role].forEach(char => {
+        const res = evaluateCharForMeta(char.name, ownedCharsMap, {});
+        const imgUrl = char.iconUrl || getIcyVeinsPortrait(char.name);
+        const badgeCls = res.status === 'owned-built' ? 'owned' : res.status === 'owned-unbuilt' ? 'owned-unbuilt' : 'missing';
+        const statusSymbol = res.status === 'owned-built' ? ' ✓' : res.status === 'owned-unbuilt' ? ' ⚠' : '';
+        html += `<div class="meta-char-badge ${badgeCls}" title="${esc(char.name)}${statusSymbol} — ${esc(res.statusText)}">
+          <img src="${imgUrl}" alt="${esc(char.name)}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
+          <span>${esc(char.name)}</span>
+        </div>`;
+      });
+      html += `</div>`;
+    });
+    html += `</div>`;
+  });
+
+  html += `</div></div>`;
+  container.innerHTML = html;
+}
+
+function renderBuildRoadmap(container, buildNow, pullTargets) {
+  if (buildNow.length === 0 && pullTargets.length === 0) {
+    container.innerHTML = "<p class='empty-text' style='color:#74c2a0'>All your S+/S tier characters are fully built — excellent account!</p>";
     return;
   }
 
-  // Create a map for quick char lookup
+  const tierCls = t => t === 'S+' ? 't-splus' : t === 'S' ? 't-s' : 't-a';
+  const item = (c, isMissing) => {
+    const img = c.iconUrl || getIcyVeinsPortrait(c.name);
+    const rolesText = [...new Set(c.roles)].slice(0, 3).join(' · ');
+    return `<div class="roadmap-item${isMissing ? ' missing' : ''}">
+      <img src="${img}" alt="${esc(c.name)}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
+      <div class="roadmap-info">
+        <span class="roadmap-name">${esc(c.name)}</span>
+        <span class="roadmap-roles">${esc(rolesText)}</span>
+      </div>
+      <div class="roadmap-right">
+        <span class="roadmap-tier ${tierCls(c.maxTier)}">${esc(c.maxTier)}</span>
+        ${isMissing ? '' : `<span class="roadmap-status">${esc(c.statusText || '')}</span>`}
+      </div>
+    </div>`;
+  };
+
+  let html = '';
+  if (buildNow.length > 0) {
+    html += `<div class="roadmap-section">
+      <div class="roadmap-section-hdr">
+        <span class="roadmap-icon">⚡</span>
+        <div><h3>Build Now</h3><p>You own these — invest now for maximum meta impact</p></div>
+      </div>
+      <div class="roadmap-list">${buildNow.map(c => item(c, false)).join('')}</div>
+    </div>`;
+  }
+  if (pullTargets.length > 0) {
+    html += `<div class="roadmap-section">
+      <div class="roadmap-section-hdr">
+        <span class="roadmap-icon">🎯</span>
+        <div><h3>Pull Targets</h3><p>S+/S tier characters you don't own — watch their banners</p></div>
+      </div>
+      <div class="roadmap-list">${pullTargets.map(c => item(c, true)).join('')}</div>
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+async function renderMetaTab() {
+  const priorityEl = document.getElementById("meta-build-priority");
+  const tierTableEl = document.getElementById("meta-tier-table");
+  if (!priorityEl || !tierTableEl) return;
+
+  // Fetch live icy-veins tier data (cached 12h in KV)
+  if (!cachedLiveRoles) {
+    try {
+      const r = await fetch('/api/meta-scrape');
+      if (r.ok) {
+        const d = await r.json();
+        if (d.roles) cachedLiveRoles = d.roles;
+      }
+    } catch (e) { console.error('meta-scrape failed', e); }
+  }
+
+  if (!cachedLiveRoles) {
+    priorityEl.innerHTML = "<p class='empty-text'>Unable to load tier data. Try again shortly.</p>";
+    tierTableEl.innerHTML = "<p class='empty-text'>Tier data unavailable.</p>";
+    return;
+  }
+
+  // Build owned map
   const ownedChars = {};
-  state.characters.forEach(c => {
+  (state.characters || []).forEach(c => {
     ownedChars[c.name.toLowerCase()] = c;
-    const fallbackName = parseCharacterNameFromIcon(c.icon).toLowerCase();
-    if (fallbackName && fallbackName !== "character") {
-        ownedChars[fallbackName] = c;
-    }
+    const fn = parseCharacterNameFromIcon(c.icon).toLowerCase();
+    if (fn && fn !== 'character') ownedChars[fn] = c;
   });
 
-  const scrapedIcons = {};
-  if (metaData.roles) {
-    Object.values(metaData.roles).forEach(arr => {
-      arr.forEach(c => { if(c.iconUrl) scrapedIcons[c.name] = c.iconUrl; });
-    });
+  // Always render tier table (visible even without login)
+  renderMetaTierTable(tierTableEl, cachedLiveRoles, ownedChars);
+
+  if (!state.characters || state.characters.length === 0) {
+    priorityEl.innerHTML = "<p class='empty-text'>Sync your HoYoLAB data to see your personal build roadmap.</p>";
+    updateAlignmentCircle(0, 0);
+    return;
   }
 
-  let totalSlots = 0;
-  let builtSlots = 0;
-  
-  const charScores = {}; // To determine build priority
+  const { buildNow, pullTargets, builtCount, totalOwned } = buildMetaRoadmap(cachedLiveRoles, ownedChars);
+  updateAlignmentCircle(builtCount, totalOwned);
+  renderBuildRoadmap(priorityEl, buildNow, pullTargets);
 
-  // Render Teams
-  metaData.teams.forEach(team => {
-    const card = document.createElement("div");
-    card.className = "meta-team-card";
-    
-    let html = `<h3><span class="meta-team-tier">${team.tier}</span> ${team.name}</h3>`;
-    html += `<div class="meta-team-roster">`;
-
-    // Core
-    team.core.forEach(charName => {
-      totalSlots++;
-      const res = evaluateCharForMeta(charName, ownedChars, scrapedIcons);
-      if (res.built) builtSlots++;
-      
-      // Track for priority
-      if (!charScores[charName]) charScores[charName] = { name: charName, score: 0, reason: "", missing: false, unbuilt: false, icon: "", teams: [] };
-      charScores[charName].score += (res.status === 'missing' ? 2 : (res.status === 'owned-unbuilt' ? 3 : 0));
-      if (res.status === 'missing') charScores[charName].missing = true;
-      if (res.status === 'owned-unbuilt') charScores[charName].unbuilt = true;
-      if (res.icon) charScores[charName].icon = res.icon;
-      if (res.status !== 'owned-built') charScores[charName].teams.push({ name: team.name, tier: team.tier });
-
-      html += `<div class="meta-char-slot ${res.status}" title="${charName} - ${res.statusText}">
-                 <img src="${res.icon}" alt="${charName}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
-               </div>`;
-    });
-
-    html += `</div>`;
-    card.innerHTML = html;
-    grid.appendChild(card);
+  // Feed build-tab priorities
+  window._metaCharScores = {};
+  buildNow.forEach(c => {
+    window._metaCharScores[c.name] = { name: c.name, score: c.urgency, unbuilt: true, icon: c.iconUrl || getIcyVeinsPortrait(c.name), teams: [] };
   });
-
-  window._metaCharScores = charScores;
   renderBuildPriorities();
+}
 
-  // Calculate Alignment
-  const alignmentPercent = totalSlots > 0 ? Math.round((builtSlots / totalSlots) * 100) : 0;
+function updateAlignmentCircle(builtCount, totalOwned) {
+  const pct = totalOwned > 0 ? Math.round((builtCount / totalOwned) * 100) : 0;
   const scoreEl = document.getElementById("meta-alignment-score");
-  if(scoreEl) scoreEl.innerText = alignmentPercent + "%";
-  
-  const fillCircle = document.getElementById("meta-alignment-fill");
-  if (fillCircle) {
-    const offset = 283 - (283 * alignmentPercent) / 100;
-    fillCircle.style.strokeDashoffset = offset;
-  }
-
-  // Render Priority Queue
-  const priorities = Object.values(charScores)
-    .filter(c => c.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5); // top 5
-  
-  if (priorities.length === 0) {
-    priorityList.innerHTML = "<p class='empty-text text-green'>Your meta teams are fully built!</p>";
-  } else {
-    priorities.forEach(p => {
-      let reasonText = "";
-      if (p.unbuilt) reasonText = "Owned but under-invested. Priority to level/talent up.";
-      else if (p.missing) reasonText = "High value meta pull. Keep an eye on banners.";
-      
-      priorityList.innerHTML += `
-        <div class="priority-item">
-          <div class="priority-char-info">
-            <img src="${p.icon || PAIMON_ICON}" alt="${p.name}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
-            <div class="priority-details">
-              <span class="priority-name">${p.name}</span>
-              <span class="priority-reason">${reasonText}</span>
-            </div>
-          </div>
-        </div>
-      `;
-    });
-  }
-
-  // Render Roles
-  if (metaData.roles && dpsList) {
-    const renderRoleList = (roleArray, container) => {
-      if(!roleArray) return;
-      // Filter out B tier if any made it through (they shouldn't have) and show all
-      roleArray.filter(c => ['S+', 'S', 'A'].includes(c.tier)).forEach(char => {
-        const res = evaluateCharForMeta(char.name, ownedChars, scrapedIcons);
-        const iconToUse = char.iconUrl || res.icon || PAIMON_ICON;
-        container.innerHTML += `
-          <div class="meta-role-item ${res.status}" title="${char.name} - ${res.statusText}">
-            <img class="role-char-icon" src="${iconToUse}" alt="${char.name}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
-            <div class="role-char-info">
-              <span class="role-char-name">${char.name}</span>
-              <span class="role-char-tier">Tier ${char.tier}</span>
-            </div>
-          </div>
-        `;
-      });
-    };
-
-    renderRoleList(metaData.roles["Main DPS"], dpsList);
-    renderRoleList(metaData.roles["Sub DPS"], subDpsList);
-    renderRoleList(metaData.roles["Support"], supportList);
-  }
+  if (scoreEl) scoreEl.innerText = pct + '%';
+  const fill = document.getElementById("meta-alignment-fill");
+  if (fill) fill.style.strokeDashoffset = 283 - (283 * pct) / 100;
 }
 
 // Derives icy-veins portrait URL from display name (slug = lowercase, spaces → hyphens)
