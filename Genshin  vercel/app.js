@@ -1,4 +1,4 @@
-// Teyvat Chrono Dashboard Controller Logic
+﻿// Teyvat Chrono Dashboard Controller Logic
 
 // Escape HTML special characters before inserting API/user data into innerHTML
 function esc(s) {
@@ -2841,51 +2841,56 @@ function updateAbyssUI() {
   document.getElementById("abyss-floor").innerText = d.max_floor || "Not Entered";
   document.getElementById("abyss-stars").innerText = d.total_star || "0";
 
-  let html = `<div class="abyss-overview-info">`;
-
-  // Display floors list breakdown if available
+  // Left column: floor clear status
+  let floorsHtml = '<p class="abyss-col-label">Floor Clear Status</p>';
   if (d.floors && d.floors.length > 0) {
-    html += `<p class="section-subtitle" style="margin-top: 5px; margin-bottom: 8px; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Floor Clear Status:</p>`;
-    html += `<div class="abyss-floors-grid" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">`;
-    d.floors.forEach(fl => {
-      html += `
-        <div class="abyss-floor-row" style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 6px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid rgba(255,255,255,0.02);">
-          <span class="floor-name">Floor ${fl.index}</span>
-          <span class="floor-stars text-gold">${SVG.star4(11,'#d4a017')} ${fl.star} / ${fl.max_star}</span>
-        </div>
-      `;
-    });
-    html += `</div>`;
+    floorsHtml += d.floors.map(fl => `
+      <div class="abyss-floor-row">
+        <span class="floor-name">Floor ${fl.index}</span>
+        <span class="floor-stars">${SVG.star4(11,'#d4a017')} ${fl.star} / ${fl.max_star}</span>
+      </div>`).join('');
+  } else {
+    floorsHtml += '<p class="empty-text">No floor data for this period.</p>';
   }
 
-  // Display combat rankings details if available
-  const hasStats = d.total_battle_num || d.total_win_num || (d.reveal_rank && d.reveal_rank.length > 0) || (d.defeat_rank && d.defeat_rank.length > 0) || (d.damage_rank && d.damage_rank.length > 0);
-  
-  if (hasStats) {
-    html += `<p class="section-subtitle" style="margin-bottom: 8px; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Combat Records:</p>`;
-    html += `<div style="display: flex; flex-direction: column; gap: 6px;">`;
-    if (d.total_battle_num) {
-      html += `<div class="abyss-rank-item" style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 4px 0;"><span>Total Battles:</span><span class="text-cyan">${d.total_battle_num}</span></div>`;
+  // Right column: combat records with avatars
+  const rankRow = (label, rankArr, valFn, cls) => {
+    if (!rankArr || !rankArr.length) return '';
+    const r = rankArr[0];
+    const avatar = r.avatar_icon
+      ? `<img src="${r.avatar_icon}" class="abyss-rank-avatar" alt="${esc(r.avatar_name || '')}">` : '';
+    return `<div class="abyss-rank-row">
+      <span class="abyss-rank-label">${label}</span>
+      <span class="abyss-rank-val ${cls}">${avatar}${esc(r.avatar_name || 'Unknown')} — ${valFn(r)}</span>
+    </div>`;
+  };
+
+  const hasCombat = d.total_battle_num || d.total_win_num ||
+    d.reveal_rank?.length || d.defeat_rank?.length || d.damage_rank?.length ||
+    d.energy_skill_rank?.length || d.take_damage_rank?.length;
+
+  let rankHtml = '<p class="abyss-col-label">Combat Records</p>';
+  if (hasCombat) {
+    if (d.total_battle_num || d.total_win_num) {
+      rankHtml += `<div class="abyss-battle-summary">
+        ${d.total_battle_num ? `<span class="text-cyan">${d.total_battle_num} Battles</span>` : ''}
+        ${d.total_win_num   ? `<span class="text-green">${d.total_win_num} Wins</span>` : ''}
+      </div>`;
     }
-    if (d.total_win_num) {
-      html += `<div class="abyss-rank-item" style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 4px 0;"><span>Total Wins:</span><span class="text-cyan">${d.total_win_num}</span></div>`;
-    }
-    if (d.reveal_rank && d.reveal_rank.length > 0) {
-      html += `<div class="abyss-rank-item" style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 4px 0;"><span>Most Revealed:</span><span class="text-gold">${d.reveal_rank[0].avatar_name || "Unknown"} (${d.reveal_rank[0].value} times)</span></div>`;
-    }
-    if (d.defeat_rank && d.defeat_rank.length > 0) {
-      html += `<div class="abyss-rank-item" style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 4px 0;"><span>Most Defeats:</span><span class="text-red">${d.defeat_rank[0].avatar_name || "Unknown"} (${d.defeat_rank[0].value} kills)</span></div>`;
-    }
-    if (d.damage_rank && d.damage_rank.length > 0) {
-      html += `<div class="abyss-rank-item" style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 4px 0;"><span>Strongest Strike:</span><span class="text-purple">${d.damage_rank[0].avatar_name || "Unknown"} (${d.damage_rank[0].value.toLocaleString()} DMG)</span></div>`;
-    }
-    html += `</div>`;
-  } else if (!d.floors || d.floors.length === 0) {
-    html += `<p class="empty-text">No combat history recorded for the current Spiral Abyss period.</p>`;
+    rankHtml += rankRow('Most Revealed',    d.reveal_rank,       r => `${r.value} times`,                'text-gold');
+    rankHtml += rankRow('Most Kills',       d.defeat_rank,       r => `${r.value} kills`,                'text-red');
+    rankHtml += rankRow('Strongest Strike', d.damage_rank,       r => `${r.value.toLocaleString()} DMG`, 'text-purple');
+    rankHtml += rankRow('Strongest Burst',  d.energy_skill_rank, r => `${r.value.toLocaleString()} DMG`, 'text-cyan');
+    rankHtml += rankRow('Most Dmg Taken',   d.take_damage_rank,  r => `${r.value.toLocaleString()} DMG`, 'text-red');
+  } else {
+    rankHtml += '<p class="empty-text">No combat history for this period.</p>';
   }
 
-  html += `</div>`;
-  container.innerHTML = html;
+  container.innerHTML = `
+    <div class="abyss-two-col">
+      <div class="abyss-col-floors">${floorsHtml}</div>
+      <div class="abyss-col-ranks">${rankHtml}</div>
+    </div>`;
 }
 
 // Draw Traveler's Ledger
@@ -3103,8 +3108,7 @@ function renderMetaTierTable(container, roles, ownedCharsMap) {
     const res = evaluateCharForMeta(char.name, ownedCharsMap, {});
     const imgUrl = char.iconUrl || getIcyVeinsPortrait(char.name);
     const badgeCls = res.status === 'owned-built' ? 'owned' : res.status === 'owned-unbuilt' ? 'owned-unbuilt' : 'missing';
-    const sym = res.status === 'owned-built' ? ' ✓' : res.status === 'owned-unbuilt' ? ' ⚠' : '';
-    return `<div class="meta-char-badge ${badgeCls}" title="${esc(char.name)}${sym} — ${esc(res.statusText)}">
+    return `<div class="meta-char-badge ${badgeCls}" title="${esc(char.name)} — ${esc(res.statusText)}">
       <img src="${imgUrl}" alt="${esc(char.name)}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
       <span>${esc(char.name)}</span>
     </div>`;
@@ -3179,7 +3183,7 @@ function renderTargetTeams(container, targetTeams, ownedCharsMap) {
       const imgUrl = c.iconUrl || getIcyVeinsPortrait(c.name);
       const statusCls = owned ? 'owned' : 'missing';
       const tierB = c.tier && c.tier !== '?' ? `<span class="char-mini-tier ${tierCls(c.tier)}">${esc(c.tier)}</span>` : '';
-      html += `<div class="target-team-char ${statusCls}" title="${esc(c.name)}${owned ? ' ✓' : ''} (${esc(c.tier || '?')})">
+      html += `<div class="target-team-char ${statusCls}" title="${esc(c.name)}${owned ? '' : ''} (${esc(c.tier || '?')})">
         <div class="target-char-img-wrap">
           <img src="${imgUrl}" alt="${esc(c.name)}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
           ${tierB}

@@ -893,16 +893,24 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 .char-card[data-element="Geo"]     { border-top: 2px solid var(--el-geo); }
 .char-card[data-element="Dendro"]  { border-top: 2px solid var(--el-dendro); }
 
-/* ── Abyss & Ledger ──────────────────────────────────────────────────────── */
-.abyss-ledger-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-@media (max-width: 900px) { .abyss-ledger-grid { grid-template-columns: 1fr; } }
-
+/* ── Spiral Abyss ────────────────────────────────────────────────────────── */
 .abyss-overview { display: flex; flex-direction: column; gap: 18px; }
 .abyss-stats    { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .abyss-stat-item { display: flex; flex-direction: column; align-items: center; background: rgba(10,14,30,.35); border: 1px solid rgba(211,188,142,.12); border-radius: 4px; padding: 14px; text-align: center; }
 .abyss-stat-item .lbl { font-size: .72rem; color: var(--text-muted); margin-bottom: 7px; letter-spacing: .8px; }
 .abyss-stat-item .val { font-family: 'Cinzel', serif; font-size: 1.55rem; font-weight: 700; }
-.abyss-details { background: rgba(10,14,30,.25); border: 1px solid rgba(211,188,142,.1); border-radius: 4px; padding: 14px; font-size: .83rem; line-height: 1.6; }
+
+.abyss-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 700px) { .abyss-two-col { grid-template-columns: 1fr; } }
+.abyss-col-label { font-family: 'Cinzel', serif; font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px; }
+.abyss-floor-row { display: flex; justify-content: space-between; align-items: center; font-size: .85rem; padding: 8px 12px; background: rgba(10,14,30,.35); border-radius: 4px; border: 1px solid rgba(211,188,142,.1); margin-bottom: 6px; }
+.abyss-floor-row .floor-name { color: var(--text-main); }
+.abyss-floor-row .floor-stars { color: var(--gold-primary); display: flex; align-items: center; gap: 4px; }
+.abyss-battle-summary { display: flex; gap: 20px; font-family: 'Cinzel', serif; font-size: .88rem; font-weight: 600; margin-bottom: 12px; }
+.abyss-rank-row { padding: 9px 12px; background: rgba(10,14,30,.35); border-radius: 4px; border: 1px solid rgba(255,255,255,.05); margin-bottom: 6px; }
+.abyss-rank-label { display: block; font-size: .7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.abyss-rank-val { display: flex; align-items: center; gap: 7px; font-size: .86rem; font-weight: 600; }
+.abyss-rank-avatar { width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(211,188,142,.25); background: var(--bg-dark); flex-shrink: 0; }
 
 .ledger-earnings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
 .earnings-box { display: flex; align-items: center; gap: 11px; border-radius: 3px; padding: 14px; }
@@ -932,7 +940,7 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 .alerts-list { display: flex; flex-direction: column; gap: 9px; }
 .alert-item  { display: flex; align-items: center; gap: 8px; font-size: .83rem; background: rgba(69,197,228,.04); border-left: 2px solid var(--cyan-primary); padding: 9px 13px; border-radius: 0 3px 3px 0; }
 
-.domains-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+.domains-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
 .domain-card { background: linear-gradient(160deg, rgba(59,66,92,0.92), rgba(37,42,64,0.94)); border: 1px solid var(--card-border); border-radius: 6px; padding: 18px; display: flex; flex-direction: column; gap: 14px; position: relative; overflow: hidden; }
 .domain-card::before { content: ''; position: absolute; top: 0; left: 8%; right: 8%; height: 1px; background: linear-gradient(90deg, transparent, rgba(211,188,142,.45), transparent); }
 .domain-info h3 { font-size: .98rem; color: var(--gold-primary); }
