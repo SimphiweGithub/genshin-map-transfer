@@ -1986,12 +1986,15 @@ function renderBuildPriorities() {
     const c = r.char;
     const name = getCharDisplayName(c);
     const scoreCls = r.score >= 30 ? 'needs-work' : r.score >= 10 ? 'almost' : 'built';
-    const avatarUrl = c.image || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
+    const charKey = getCharKey(c);
+    const splashAvatar = `https://gi.yatta.moe/assets/UI/UI_Gacha_AvatarImg_${charKey}.png`;
+    const fallbackAvatar = c.image || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
     const tagsHtml = r.tags.map(t => `<span class="build-tag ${t.cls}">${t.text}</span>`).join('');
     const i = idx(c);
     return `
       <div class="build-row" onclick="showCharDetail(${i})" title="Click to see ${esc(name)}'s details">
-        <img class="build-row-avatar" src="${avatarUrl}" alt="${esc(name)}" onerror="this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
+        <img class="build-row-avatar" src="${splashAvatar}" alt="${esc(name)}"
+             onerror="if(this.src!=='${esc(fallbackAvatar)}'){this.src='${esc(fallbackAvatar)}';}">
         <div class="build-row-info">
           <span class="build-row-name">${esc(name)}</span>
           <div class="build-row-tags">${tagsHtml}</div>
@@ -2069,11 +2072,11 @@ const GACHA_BANNERS = [
   // The Character Event banner logs pulls under BOTH 301 and 400 (two banners
   // that share one pity counter). altTypes merges 400's pulls into this bucket
   // so pity and stats are correct.
-  { type: '301', name: 'Character Event', softPity: 74, hardPity: 90,  color: '#ef7027', altTypes: ['400'], fiftyFifty: 'char' },
-  { type: '302', name: 'Weapon Event',    softPity: 63, hardPity: 80,  color: '#9f71cf', fiftyFifty: 'weapon' },
-  { type: '200', name: 'Standard',        softPity: 74, hardPity: 90,  color: '#47bfe0' },
-  { type: '100', name: 'Beginner',        softPity: 74, hardPity: 90,  color: '#74c2a0' },
-  { type: '500', name: 'Chronicled',      softPity: 74, hardPity: 90,  color: '#c8a040' },
+  { type: '301', name: 'Character Event', softPity: 74, hardPity: 90,  color: '#ef7027', altTypes: ['400'], fiftyFifty: 'char',   icon: 'https://gi.yatta.moe/assets/UI/UI_ItemIcon_223.png' },
+  { type: '302', name: 'Weapon Event',    softPity: 63, hardPity: 80,  color: '#9f71cf', fiftyFifty: 'weapon',                    icon: 'https://gi.yatta.moe/assets/UI/UI_ItemIcon_223.png' },
+  { type: '200', name: 'Standard',        softPity: 74, hardPity: 90,  color: '#47bfe0',                                          icon: 'https://gi.yatta.moe/assets/UI/UI_ItemIcon_224.png' },
+  { type: '100', name: 'Beginner',        softPity: 74, hardPity: 90,  color: '#74c2a0',                                          icon: 'https://gi.yatta.moe/assets/UI/UI_ItemIcon_224.png' },
+  { type: '500', name: 'Chronicled',      softPity: 74, hardPity: 90,  color: '#c8a040',                                          icon: 'https://gi.yatta.moe/assets/UI/UI_ItemIcon_223.png' },
 ];
 
 // Permanent-pool 5★s. On the Character banner, pulling one of these = a LOST
@@ -2342,9 +2345,10 @@ function renderWishUI(data) {
 
     return `
       <div class="pity-card" style="--pity-color:${b.color}">
+        <img class="pity-banner-icon" src="${b.icon}" alt="${b.name}" onerror="this.style.display='none'">
         <div class="pity-name">${b.name}</div>
         <div class="pity-count ${danger ? 'pity-danger' : ''}">${pity}</div>
-        <div class="pity-label">pulls since last ${SVG.star4(10,'#d4a017')}5</div>
+        <div class="pity-label">pity since last ${SVG.star4(10,'#d4a017')}5</div>
         <div class="pity-bar"><div class="pity-fill" style="width:${pct}%;background:${b.color}"></div></div>
         <div class="pity-tosoft">${toSoftLine}</div>
         ${guarBadge}
@@ -2761,17 +2765,23 @@ function updateCharactersCatalogUI() {
   _detailChars.forEach((char, idx) => {
     const constellationText = `C${char.actived_constellation_num || 0}`;
     const displayName = getCharDisplayName(char);
+    const key = getCharKey(char);
+    const splashUrl = `https://gi.yatta.moe/assets/UI/UI_Gacha_AvatarImg_${key}.png`;
+    const fallbackUrl = char.image || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
 
     html += `
       <div class="char-card rarity-${char.rarity}" data-element="${esc(char.element)}" onclick="showCharDetail(${idx})" title="${esc(displayName)}">
-        <div class="char-element-badge">${getElementSVG(char.element)}</div>
-        <div class="char-thumb">
-          <img src="${char.image}" alt="${esc(displayName)}" onerror="this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
+        <div class="char-portrait">
+          <img src="${splashUrl}" alt="${esc(displayName)}"
+               onerror="if(this.src!=='${esc(fallbackUrl)}'){this.src='${esc(fallbackUrl)}';}">
+          <div class="char-element-badge">${getElementSVG(char.element)}</div>
         </div>
-        <span class="char-name">${esc(displayName)}</span>
-        <div class="char-meta">
-          <span class="char-level">Lv. ${char.level}</span>
-          <span class="char-const">${constellationText}</span>
+        <div class="char-info">
+          <span class="char-name">${esc(displayName)}</span>
+          <div class="char-meta">
+            <span class="char-level">Lv.${char.level}</span>
+            <span class="char-const">${constellationText}</span>
+          </div>
         </div>
       </div>
     `;
