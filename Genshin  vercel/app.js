@@ -2379,8 +2379,9 @@ function renderWishUI(data) {
 
   // Recent pulls — show active banner filter
   const filterRow = document.getElementById('wish-filter-row');
+  const activeFilter = state._wishFilter || 'all';
   filterRow.innerHTML = [{ type: 'all', name: 'All' }, ...GACHA_BANNERS]
-    .map(b => `<button class="btn btn-sm ${state._wishFilter === b.type ? 'btn-primary' : 'btn-secondary'} wish-filter-btn" data-type="${b.type}">${b.name}</button>`)
+    .map(b => `<button class="wish-filter-btn ${activeFilter === b.type ? 'active' : ''}" data-type="${b.type}">${b.name}</button>`)
     .join('');
 
   renderWishList(data, state._wishFilter || 'all');
@@ -2656,16 +2657,17 @@ function renderWishList(data, filterType) {
 
   if (!wishes.length) { list.innerHTML = '<p class="empty-text">No wishes for this banner yet.</p>'; return; }
 
-  const banner = b => GACHA_BANNERS.find(x => x.type === b) || {};
+  const bannerInfo = b => GACHA_BANNERS.find(x => x.type === b) || {};
   list.innerHTML = wishes.map(w => {
     const r = parseInt(w.rank_type);
-    const col = r === 5 ? '#d4a017' : r === 4 ? '#9b59b6' : 'rgba(255,255,255,.4)';
-    const stars = Array(r).fill(SVG.star4(10, col)).join('');
+    const col = r === 5 ? '#d4a017' : r === 4 ? '#9b59b6' : 'rgba(255,255,255,.38)';
+    const stars = '★'.repeat(r);
+    const bn = bannerInfo(w._banner);
     return `<div class="wish-item wish-r${r}">
       <span class="wish-stars" style="color:${col}">${stars}</span>
       <span class="wish-name">${esc(w.name)}</span>
       <span class="wish-type">${esc(w.item_type)}</span>
-      <span class="wish-banner-tag" style="color:${banner(w._banner).color || '#aaa'}">${esc(banner(w._banner).name || '')}</span>
+      <span class="wish-banner-tag" style="color:${bn.color || '#aaa'}">${esc(bn.name || '')}</span>
       <span class="wish-date">${esc(w.time?.slice(0, 10) || '')}</span>
     </div>`;
   }).join('');

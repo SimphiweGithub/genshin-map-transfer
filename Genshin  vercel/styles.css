@@ -1844,27 +1844,72 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 .wish-stat-lbl { font-size: .6rem; text-transform: uppercase; letter-spacing: .7px; color: rgba(255,255,255,.35); text-align: center; }
 
 /* Wish list */
-.wish-history-list { display: flex; flex-direction: column; gap: 2px; max-height: 500px; overflow-y: auto; padding-right: 4px; }
+.wish-history-list { display: flex; flex-direction: column; gap: 0; max-height: 520px; overflow-y: auto; padding-right: 4px; }
 
 .wish-item {
   display: grid;
-  grid-template-columns: 60px 1fr auto auto auto;
+  grid-template-columns: 58px 1fr auto auto auto;
   align-items: center;
-  gap: 10px;
-  padding: 7px 10px;
-  border-radius: 6px;
-  font-size: .78rem;
-  border-left: 2px solid transparent;
+  gap: 12px;
+  padding: 9px 14px;
+  font-size: .8rem;
+  border-left: 3px solid transparent;
+  transition: background .1s;
 }
-.wish-r5 { background: rgba(212,160,23,.06); border-left-color: #d4a017; }
-.wish-r4 { background: rgba(155,89,182,.06); border-left-color: #9b59b6; }
-.wish-r3 { background: rgba(255,255,255,.02); }
+.wish-item:hover { background: rgba(255,255,255,.025); }
+.wish-r5 { border-left-color: #d4a017; }
+.wish-r4 { border-left-color: #9b59b6; }
+.wish-r3 { opacity: .65; }
 
-.wish-stars  { font-size: .7rem; letter-spacing: -1px; }
-.wish-name   { font-weight: 600; color: var(--text-primary); }
-.wish-type   { font-size: .65rem; color: rgba(255,255,255,.35); }
-.wish-banner-tag { font-size: .6rem; opacity: .8; }
-.wish-date   { font-size: .62rem; color: rgba(255,255,255,.3); white-space: nowrap; }
+.wish-stars     { font-size: .75rem; letter-spacing: .5px; }
+.wish-name      { font-size: .85rem; font-weight: 600; color: var(--text-main); }
+.wish-type      { font-size: .65rem; color: rgba(255,255,255,.3); }
+.wish-banner-tag{ font-size: .63rem; font-weight: 500; }
+.wish-date      { font-size: .62rem; color: rgba(255,255,255,.28); white-space: nowrap; }
+
+/* Filter pills for Recent Pulls */
+.wish-filter-btn {
+  font-family: 'Cinzel', serif;
+  font-size: .54rem;
+  letter-spacing: .8px;
+  padding: 4px 11px;
+  border-radius: 20px;
+  border: 1px solid rgba(211,188,142,.2);
+  background: transparent;
+  color: rgba(255,255,255,.42);
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+  white-space: nowrap;
+}
+.wish-filter-btn:hover { border-color: rgba(211,188,142,.4); color: rgba(255,255,255,.72); }
+.wish-filter-btn.active {
+  background: rgba(211,188,142,.1);
+  border-color: var(--gold-primary);
+  color: var(--gold-light);
+}
+
+/* Genshin-style corner brackets on the Recent Pulls card */
+.wish-pull-card { position: relative; }
+.wish-pull-card::before {
+  content: '';
+  position: absolute;
+  top: 7px; left: 7px;
+  width: 14px; height: 14px;
+  border-top: 1.5px solid rgba(211,188,142,.45);
+  border-left: 1.5px solid rgba(211,188,142,.45);
+  pointer-events: none;
+  z-index: 1;
+}
+.wish-pull-card::after {
+  content: '';
+  position: absolute;
+  bottom: 7px; right: 7px;
+  width: 14px; height: 14px;
+  border-bottom: 1.5px solid rgba(211,188,142,.45);
+  border-right: 1.5px solid rgba(211,188,142,.45);
+  pointer-events: none;
+  z-index: 1;
+}
 
 @media (max-width: 560px) {
   .wish-item { grid-template-columns: 50px 1fr auto; }
