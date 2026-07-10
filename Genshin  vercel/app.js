@@ -1845,7 +1845,24 @@ function renderBuildPriorities() {
   }
   card.style.display = '';
 
-  const rows = state.characters.map(c => {
+  // Only meta characters — everyone else leaves
+  if (!window._metaCharScores || Object.keys(window._metaCharScores).length === 0) {
+    list.innerHTML = '<p class="empty-text">Waiting for Meta Tracker to load...</p>';
+    return;
+  }
+  const metaNames = new Set(
+    Object.values(window._metaCharScores).map(m => m.name.toLowerCase())
+  );
+  const metaChars = state.characters.filter(c => {
+    const dn = getCharDisplayName(c).toLowerCase();
+    return metaNames.has(dn) || metaNames.has((c.name || '').toLowerCase());
+  });
+  if (metaChars.length === 0) {
+    list.innerHTML = '<p class="empty-text" style="color:#74c2a0">All owned meta characters are fully built!</p>';
+    return;
+  }
+
+  const rows = metaChars.map(c => {
     const d = state.characterDetails[c.id];
     const tags = [];
     let score = 0;
@@ -1951,7 +1968,7 @@ function renderBuildPriorities() {
         </div>
         <span class="build-row-score ${scoreCls}">${r.score}</span>
       </div>`;
-  }).join('') + (built > 0 ? `<p class="empty-text" style="margin-top:6px;font-size:.75rem;color:#74c2a0">+ ${built} fully built character${built > 1 ? 's' : ''}</p>` : '');
+  }).join('') + (built > 0 ? `<p class="empty-text" style="margin-top:6px;font-size:.75rem;color:#74c2a0">+ ${built} fully built meta character${built > 1 ? 's' : ''}</p>` : '');
 }
 
 function renderResinAdvisor() {
