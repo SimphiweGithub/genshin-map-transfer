@@ -257,6 +257,7 @@ if ("serviceWorker" in navigator) {
 
 document.addEventListener("DOMContentLoaded", () => {
   loadLocalStorage();
+  renderCheckinCalendar();
   setupEventListeners();
   setupTabSystem();
   
@@ -884,7 +885,7 @@ async function handleManualCheckin() {
 
   const btn = document.getElementById("do-checkin-btn");
   btn.disabled = true;
-  btn.innerText = "Signing...";
+  btn.querySelector('.btn-label').textContent = "Signing...";
 
   try {
     await executeCheckinAPI();
@@ -892,7 +893,7 @@ async function handleManualCheckin() {
     alert(`Check-in failed: ${error.message}`);
   } finally {
     btn.disabled = false;
-    btn.innerText = state.checkedInToday ? "Checked In Today" : "Check-in Now";
+    btn.querySelector('.btn-label').textContent = state.checkedInToday ? "Checked In Today" : "Check-in Now";
   }
 }
 
@@ -1389,27 +1390,45 @@ function updateExpeditionsRealtime() {
     const imgUrl = (ex.avatar && ex.avatar.startsWith('http')) ? ex.avatar : 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
 
     html += `
-      <div class="expedition-row">
-        <div class="exp-avatar-name">
-          <div class="exp-avatar">
-            <img src="${imgUrl}" alt="${ex.name}">
-          </div>
-          <span class="exp-name">${ex.name}</span>
+      <div class="exp-card ${isFinished ? 'exp-finished' : ''}">
+        <div class="exp-avatar-wrap">
+          <img src="${imgUrl}" alt="${ex.name}" class="exp-avatar-img">
+          ${isFinished ? `<div class="exp-done-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>` : ''}
         </div>
-        <div class="exp-timer-bar">
-          ${isFinished 
-            ? '<span class="exp-status-finished">Finished</span>' 
-            : `<span class="exp-time text-cyan">${formatDuration(remaining)}</span>`
-          }
-          <div class="exp-progress-line">
-            <div class="exp-fill-line" style="width: ${fillPct}%;"></div>
-          </div>
-        </div>
+        <span class="exp-name">${ex.name}</span>
+        <span class="exp-card-time ${isFinished ? 'text-green' : 'text-cyan'}">${isFinished ? 'Done!' : formatDuration(remaining)}</span>
       </div>
     `;
   });
 
   container.innerHTML = html;
+}
+
+function renderCheckinCalendar() {
+  const cal = document.getElementById('cal-days');
+  if (!cal) return;
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const today = now.getDate();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  // 0=Sun → shift to 0=Mon
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
+  const checkedCount = state.checkinDaysCount || 0;
+  let html = '';
+  for (let i = 0; i < firstDow; i++) html += '<span class="cal-day cal-empty"></span>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday   = d === today;
+    const isChecked = d <= checkedCount;
+    const isFuture  = d > today;
+    let cls = 'cal-day';
+    if (isToday && isChecked) cls += ' cal-today-checked';
+    else if (isToday)         cls += ' cal-today';
+    else if (isChecked)       cls += ' cal-checked';
+    else if (isFuture)        cls += ' cal-future';
+    html += `<span class="${cls}">${d}</span>`;
+  }
+  cal.innerHTML = html;
 }
 
 // Update major parts of static UI on changes
@@ -1468,17 +1487,18 @@ function updateUI() {
 
   // Daily checkin widget
   document.getElementById("checkin-days").innerText = state.checkinDaysCount;
+  renderCheckinCalendar();
   const chkBadge = document.getElementById("checkin-status-badge");
   const chkBtn = document.getElementById("do-checkin-btn");
   if (state.checkedInToday) {
     chkBadge.className = "badge badge-success";
-    chkBadge.innerText = "Claimed Today";
-    chkBtn.innerText = "Checked In Today";
+    chkBadge.textContent = "Claimed Today";
+    chkBtn.querySelector('.btn-label').textContent = "Checked In Today";
     chkBtn.disabled = true;
   } else {
     chkBadge.className = "badge badge-error";
-    chkBadge.innerText = "Not Claimed Today";
-    chkBtn.innerText = "Check-in Now";
+    chkBadge.textContent = "Not Claimed Today";
+    chkBtn.querySelector('.btn-label').textContent = "Check-in Now";
     chkBtn.disabled = false;
   }
 
