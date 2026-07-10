@@ -2895,15 +2895,26 @@ function updateAbyssUI() {
     floorsHtml += '<p class="empty-text">No floor data for this period.</p>';
   }
 
+  // Resolve a rank entry's character name — the abyss API returns avatar_id +
+  // avatar_icon but usually NO name, so cross-reference the owned roster.
+  const rankName = (r) => {
+    if (r.avatar_name) return r.avatar_name;
+    const c = (state.characters || []).find(ch => ch.id == r.avatar_id);
+    if (c) return getCharDisplayName(c);
+    const parsed = parseCharacterNameFromIcon(r.avatar_icon || '');
+    return parsed && parsed !== 'Character' ? parsed : 'Character';
+  };
+
   // Right column: combat records with avatars
   const rankRow = (label, rankArr, valFn, cls) => {
     if (!rankArr || !rankArr.length) return '';
     const r = rankArr[0];
+    const nm = rankName(r);
     const avatar = r.avatar_icon
-      ? `<img src="${r.avatar_icon}" class="abyss-rank-avatar" alt="${esc(r.avatar_name || '')}">` : '';
+      ? `<img src="${r.avatar_icon}" class="abyss-rank-avatar" alt="${esc(nm)}">` : '';
     return `<div class="abyss-rank-row">
       <span class="abyss-rank-label">${label}</span>
-      <span class="abyss-rank-val ${cls}">${avatar}${esc(r.avatar_name || 'Unknown')} — ${valFn(r)}</span>
+      <span class="abyss-rank-val ${cls}">${avatar}${esc(nm)} — ${valFn(r)}</span>
     </div>`;
   };
 
@@ -2938,6 +2949,9 @@ function updateAbyssUI() {
 // Draw Traveler's Ledger
 function updateLedgerUI() {
   const container = document.getElementById("ledger-breakdown-list");
+  // Ledger card was removed from the Abyss tab — bail out if its DOM is gone
+  // so updateUI() doesn't throw and halt the rest of the init sequence.
+  if (!container) return;
   if (!state.ledger) {
     container.innerHTML = `
       <p class="empty-text text-muted" style="margin-top: 15px; text-align: center; font-size: 0.85rem;">
