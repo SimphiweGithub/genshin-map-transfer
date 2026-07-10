@@ -78,6 +78,13 @@ function parseCharacterNameFromIcon(url) {
   }
 }
 
+// Extract Genshin character ID (10000xxx) from CDN URL for fallback name lookup
+function extractCharIdFromUrl(url) {
+  if (!url) return null;
+  const m = url.match(/\b(1000\d{4})\b/);
+  return m ? parseInt(m[1]) : null;
+}
+
 // ── Domain icon SVG helpers ───────────────────────────────────────────────
 function bookIcon(t) {
   if (t && t.icon) {
@@ -688,6 +695,7 @@ async function handleRefresh() {
         state.expeditions = d.expeditions.map(ex => ({
           name: parseCharacterNameFromIcon(ex.avatar_side_icon),
           avatar: ex.avatar_side_icon,
+          charId: ex.character_id || extractCharIdFromUrl(ex.avatar_side_icon),
           remSec: ex.remained_time,
           status: ex.status,
           remText: ex.remained_time === 0 ? "Finished" : ""
@@ -1365,6 +1373,25 @@ function updateCustomTimersRealtime() {
   container.innerHTML = html;
 }
 
+// Resolve expedition character name with fallbacks for hashed CDN URLs
+function resolveExpName(ex) {
+  if (ex.name !== 'Character') return ex.name;
+  // Try by character ID (from API field or URL extraction)
+  if (ex.charId && state.characters?.length) {
+    const c = state.characters.find(c => c.id == ex.charId);
+    if (c) return getCharDisplayName(c);
+  }
+  // Try slug matching of character name substring in avatar URL
+  if (ex.avatar && state.characters?.length) {
+    for (const c of state.characters) {
+      const dn = getCharDisplayName(c);
+      const slug = dn.toLowerCase().replace(/[^a-z]/g, '');
+      if (slug.length > 2 && ex.avatar.toLowerCase().includes(slug)) return dn;
+    }
+  }
+  return 'Character';
+}
+
 // Update Dispatch Expeditions countdowns
 function updateExpeditionsRealtime() {
   const container = document.getElementById("expeditions-list");
@@ -1388,14 +1415,15 @@ function updateExpeditionsRealtime() {
     const fillPct = isFinished ? 100 : Math.min(100, Math.floor((1 - remaining / totalDuration) * 100));
 
     const imgUrl = (ex.avatar && ex.avatar.startsWith('http')) ? ex.avatar : 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
+    const displayName = resolveExpName(ex);
 
     html += `
       <div class="exp-card ${isFinished ? 'exp-finished' : ''}">
         <div class="exp-avatar-wrap">
-          <img src="${imgUrl}" alt="${ex.name}" class="exp-avatar-img">
+          <img src="${imgUrl}" alt="${displayName}" class="exp-avatar-img">
           ${isFinished ? `<div class="exp-done-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>` : ''}
         </div>
-        <span class="exp-name">${ex.name}</span>
+        <span class="exp-name">${displayName}</span>
         <span class="exp-card-time ${isFinished ? 'text-green' : 'text-cyan'}">${isFinished ? 'Done!' : formatDuration(remaining)}</span>
       </div>
     `;
@@ -1487,6 +1515,8 @@ function updateUI() {
 
   // Daily checkin widget
   document.getElementById("checkin-days").innerText = state.checkinDaysCount;
+  const streakEl = document.getElementById('checkin-streak-count');
+  if (streakEl) streakEl.textContent = state.checkinDaysCount || 0;
   renderCheckinCalendar();
   const chkBadge = document.getElementById("checkin-status-badge");
   const chkBtn = document.getElementById("do-checkin-btn");
