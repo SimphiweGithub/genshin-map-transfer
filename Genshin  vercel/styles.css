@@ -1186,7 +1186,7 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding: 0 0 16px;
   overflow: hidden;
   background: linear-gradient(160deg, rgba(200,160,90,.08) 0%, rgba(6,10,18,.9) 70%);
@@ -1195,12 +1195,11 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 
 .char-detail-portrait-img {
   width: 100%;
-  height: 100%;
-  min-height: 380px;
+  aspect-ratio: 3 / 4;
   object-fit: cover;
   object-position: top center;
   display: block;
-  flex: 1;
+  flex: none;
 }
 
 .char-detail-rarity-stars {
