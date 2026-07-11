@@ -78,13 +78,6 @@ function parseCharacterNameFromIcon(url) {
   }
 }
 
-// Extract Genshin character ID (10000xxx) from CDN URL for fallback name lookup
-function extractCharIdFromUrl(url) {
-  if (!url) return null;
-  const m = url.match(/\b(1000\d{4})\b/);
-  return m ? parseInt(m[1]) : null;
-}
-
 // ── Domain icon SVG helpers ───────────────────────────────────────────────
 function bookIcon(t) {
   if (t && t.icon) {
@@ -690,12 +683,15 @@ async function handleRefresh() {
         }
       }
 
-      // Parse expeditions
+      // Parse expeditions. HoYoLAB's dailyNote gives no character ID or name
+      // for expeditions — avatar_side_icon is a server-computed image with an
+      // opaque hash unrelated to any character asset hash (confirmed: every
+      // expedition in an account shares one hash bucket, disjoint from the
+      // character roster's hash buckets). The portrait image is genuinely
+      // per-expedition and displays correctly; there's just no name to derive.
       if (d.expeditions) {
         state.expeditions = d.expeditions.map(ex => ({
-          name: parseCharacterNameFromIcon(ex.avatar_side_icon),
           avatar: ex.avatar_side_icon,
-          charId: ex.character_id || extractCharIdFromUrl(ex.avatar_side_icon),
           remSec: ex.remained_time,
           status: ex.status,
           remText: ex.remained_time === 0 ? "Finished" : ""
@@ -1373,53 +1369,6 @@ function updateCustomTimersRealtime() {
   container.innerHTML = html;
 }
 
-// HoYoLAB's asset CDN shards images as /item_icon/{charDirHash}/{variantHash}.png
-// — the directory hash is stable per character across image variants (front
-// icon, card image, side icon), only the filename hash differs per variant.
-// So the directory segment is the real join key between an expedition's
-// avatar_side_icon and a character's own image/card_image.
-function extractAssetDirHash(url) {
-  if (!url) return null;
-  const m = url.match(/\/item_icon\/([0-9a-f]+)\//i);
-  return m ? m[1] : null;
-}
-
-// Resolve expedition character name with fallbacks for hashed CDN URLs.
-// dailyNote (expeditions) loads before the index API (state.characters), so
-// this must run at render time, not at parse time.
-function resolveExpName(ex) {
-  if (ex.name !== 'Character') return ex.name;
-  if (!state.characters?.length) return 'Character';
-
-  // Strongest signal: match by the per-character CDN directory hash shared
-  // between the expedition's avatar and the character's own image assets.
-  if (ex.avatar) {
-    const expDir = extractAssetDirHash(ex.avatar);
-    if (expDir) {
-      const c = state.characters.find(c =>
-        extractAssetDirHash(c.image) === expDir || extractAssetDirHash(c.card_image) === expDir
-      );
-      if (c) return getCharDisplayName(c);
-    }
-  }
-
-  // Fallback: character ID (from API field or URL extraction)
-  if (ex.charId) {
-    const c = state.characters.find(c => c.id == ex.charId);
-    if (c) return getCharDisplayName(c);
-  }
-
-  // Last resort: slug matching of character name substring in avatar URL
-  if (ex.avatar) {
-    for (const c of state.characters) {
-      const dn = getCharDisplayName(c);
-      const slug = dn.toLowerCase().replace(/[^a-z]/g, '');
-      if (slug.length > 2 && ex.avatar.toLowerCase().includes(slug)) return dn;
-    }
-  }
-  return 'Character';
-}
-
 // Update Dispatch Expeditions countdowns
 function updateExpeditionsRealtime() {
   const container = document.getElementById("expeditions-list");
@@ -1443,15 +1392,16 @@ function updateExpeditionsRealtime() {
     const fillPct = isFinished ? 100 : Math.min(100, Math.floor((1 - remaining / totalDuration) * 100));
 
     const imgUrl = (ex.avatar && ex.avatar.startsWith('http')) ? ex.avatar : 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
-    const displayName = resolveExpName(ex);
 
+    // HoYoLAB gives no character ID/name for expeditions (see comment at the
+    // parse site) — the portrait itself is the only identifying signal, so
+    // there's no name label here.
     html += `
       <div class="exp-card ${isFinished ? 'exp-finished' : ''}">
         <div class="exp-avatar-wrap">
-          <img src="${imgUrl}" alt="${displayName}" class="exp-avatar-img">
+          <img src="${imgUrl}" alt="Expedition character" class="exp-avatar-img">
           ${isFinished ? `<div class="exp-done-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>` : ''}
         </div>
-        <span class="exp-name">${displayName}</span>
         <span class="exp-card-time ${isFinished ? 'text-green' : 'text-cyan'}">${isFinished ? 'Done!' : formatDuration(remaining)}</span>
       </div>
     `;
