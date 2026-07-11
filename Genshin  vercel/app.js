@@ -1986,15 +1986,13 @@ function renderBuildPriorities() {
     const c = r.char;
     const name = getCharDisplayName(c);
     const scoreCls = r.score >= 30 ? 'needs-work' : r.score >= 10 ? 'almost' : 'built';
-    const charKey = getCharKey(c);
-    const splashAvatar = `https://gi.yatta.moe/assets/UI/UI_Gacha_AvatarImg_${charKey}.png`;
-    const fallbackAvatar = c.image || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
+    const avatarUrl = c.image || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
     const tagsHtml = r.tags.map(t => `<span class="build-tag ${t.cls}">${t.text}</span>`).join('');
     const i = idx(c);
     return `
       <div class="build-row" onclick="showCharDetail(${i})" title="Click to see ${esc(name)}'s details">
-        <img class="build-row-avatar" src="${splashAvatar}" alt="${esc(name)}"
-             onerror="if(this.src!=='${esc(fallbackAvatar)}'){this.src='${esc(fallbackAvatar)}';}">
+        <img class="build-row-avatar" src="${avatarUrl}" alt="${esc(name)}"
+             onerror="this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
         <div class="build-row-info">
           <span class="build-row-name">${esc(name)}</span>
           <div class="build-row-tags">${tagsHtml}</div>
@@ -2767,21 +2765,21 @@ function updateCharactersCatalogUI() {
   _detailChars.forEach((char, idx) => {
     const constellationText = `C${char.actived_constellation_num || 0}`;
     const displayName = getCharDisplayName(char);
-    const key = getCharKey(char);
-    const splashUrl = `https://gi.yatta.moe/assets/UI/UI_Gacha_AvatarImg_${key}.png`;
-    const fallbackUrl = char.image || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
+    // Use the square avatar face icon (256x256) — the gacha splash is wide
+    // landscape art that crops badly in a portrait frame.
+    const iconUrl = char.image || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
 
     html += `
       <div class="char-card rarity-${char.rarity}" data-element="${esc(char.element)}" onclick="showCharDetail(${idx})" title="${esc(displayName)}">
         <div class="char-portrait">
-          <img src="${splashUrl}" alt="${esc(displayName)}"
-               onerror="if(this.src!=='${esc(fallbackUrl)}'){this.src='${esc(fallbackUrl)}';}">
+          <img src="${iconUrl}" alt="${esc(displayName)}"
+               onerror="this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
           <div class="char-element-badge">${getElementSVG(char.element)}</div>
         </div>
         <div class="char-info">
           <span class="char-name">${esc(displayName)}</span>
           <div class="char-meta">
-            <span class="char-level">Lv.${char.level}</span>
+            <span class="char-level">Lv. ${char.level}</span>
             <span class="char-const">${constellationText}</span>
           </div>
         </div>
