@@ -11,6 +11,7 @@
     }
   },
   "images": {
+    "sizes": [32, 40, 48, 52, 56, 60, 64, 80, 90, 92, 100, 110, 120, 128, 200, 256, 384, 560, 640],
     "remotePatterns": [
       { "protocol": "https", "hostname": "**.hoyolab.com" },
       { "protocol": "https", "hostname": "**.hoyoverse.com" },
