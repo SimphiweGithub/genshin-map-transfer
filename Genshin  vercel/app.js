@@ -5,6 +5,16 @@ function esc(s) {
   return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// Route external CDN images through Vercel's Image Optimization endpoint —
+// same-origin, resizes to the requested width, and serves WebP/AVIF
+// automatically based on the browser's Accept header, cached at the edge.
+// Passing through unwrapped for non-http sources (data URIs, already-local
+// paths) so this is always safe to call.
+function optImg(url, width = 128) {
+  if (!url || !/^https?:\/\//.test(url)) return url;
+  return `/_vercel/image?url=${encodeURIComponent(url)}&w=${width}&q=75`;
+}
+
 // Official element SVG paths extracted from genshin-optimizer (frzyc/genshin-optimizer, MIT)
 const ELEMENT_ICONS = {
   Pyro:    { color: "#ef7027", path: "https://gi.yatta.moe/assets/UI/UI_Buff_Element_Fire.png" },
@@ -20,7 +30,7 @@ const ELEMENT_ICONS = {
 function getElementSVG(element) {
   const el = ELEMENT_ICONS[element];
   if (!el || !el.path) return '';
-  return `<img class="el-icon" src="${el.path}" alt="${element}" style="width:14px;height:14px;vertical-align:middle;filter:drop-shadow(0 0 2px rgba(0,0,0,0.5))">`;
+  return `<img class="el-icon" src="${optImg(el.path, 32)}" alt="${element}" style="width:14px;height:14px;vertical-align:middle;filter:drop-shadow(0 0 2px rgba(0,0,0,0.5))">`;
 }
 
 const SVG = {
@@ -81,7 +91,7 @@ function parseCharacterNameFromIcon(url) {
 // ── Domain icon SVG helpers ───────────────────────────────────────────────
 function bookIcon(t) {
   if (t && t.icon) {
-    return `<img src="https://gi.yatta.moe/assets/UI/UI_ItemIcon_${t.icon}.png" alt="${t.name}" style="width:28px;height:28px;vertical-align:middle">`;
+    return `<img src="${optImg(`https://gi.yatta.moe/assets/UI/UI_ItemIcon_${t.icon}.png`, 56)}" alt="${t.name}" style="width:28px;height:28px;vertical-align:middle">`;
   }
   const c = typeof t === 'string' ? t : (t.color || "#ccc");
   return `<svg viewBox="0 0 28 28" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
@@ -1399,7 +1409,7 @@ function updateExpeditionsRealtime() {
     html += `
       <div class="exp-card ${isFinished ? 'exp-finished' : ''}">
         <div class="exp-avatar-wrap">
-          <img src="${imgUrl}" alt="Expedition character" class="exp-avatar-img">
+          <img src="${optImg(imgUrl, 100)}" alt="Expedition character" class="exp-avatar-img">
           ${isFinished ? `<div class="exp-done-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>` : ''}
         </div>
         <span class="exp-card-time ${isFinished ? 'text-green' : 'text-cyan'}">${isFinished ? 'Done!' : formatDuration(remaining)}</span>
@@ -1471,7 +1481,7 @@ function updateUI() {
   if (state.playerInfo) {
     accCard.classList.remove("locked");
     const avatarUrl = (state.playerInfo.avatar && state.playerInfo.avatar.startsWith('http')) ? state.playerInfo.avatar : "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png";
-    document.getElementById("player-avatar").src = avatarUrl;
+    document.getElementById("player-avatar").src = optImg(avatarUrl, 120);
     document.getElementById("player-nickname").innerText = state.playerInfo.nickname || "Traveler";
     document.getElementById("player-level").innerText = `AR ${state.playerInfo.level || '--'}`;
     
@@ -1484,7 +1494,7 @@ function updateUI() {
     document.getElementById("stat-chests").innerText      = a.chests        || "--";
   } else {
     accCard.classList.add("locked");
-    document.getElementById("player-avatar").src = "https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png";
+    document.getElementById("player-avatar").src = optImg("https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png", 120);
     document.getElementById("player-nickname").innerText  = "Traveler (Locked)";
     document.getElementById("player-level").innerText     = "AR --";
     ["stat-days","stat-achievements","stat-characters","stat-abyss","stat-waypoints","stat-chests"]
@@ -1541,8 +1551,8 @@ function flashCards() {
 // Real game art icons for Primogems and Mora (from Genshin Impact Wiki)
 const PRIMO_IMG_URL = 'https://gi.yatta.moe/assets/UI/UI_ItemIcon_201.png';
 const MORA_IMG_URL  = 'https://gi.yatta.moe/assets/UI/UI_ItemIcon_202.png';
-const PRIMO_SVG = `<img src="${PRIMO_IMG_URL}" alt="Primogem" style="width:16px;height:16px;vertical-align:middle;margin-right:2px">`;
-const MORA_SVG  = `<img src="${MORA_IMG_URL}" alt="Mora" style="width:16px;height:16px;vertical-align:middle;margin-right:2px">`;
+const PRIMO_SVG = `<img src="${optImg(PRIMO_IMG_URL, 32)}" alt="Primogem" style="width:16px;height:16px;vertical-align:middle;margin-right:2px">`;
+const MORA_SVG  = `<img src="${optImg(MORA_IMG_URL, 32)}" alt="Mora" style="width:16px;height:16px;vertical-align:middle;margin-right:2px">`;
 
 function formatReward(reward) {
   return reward
@@ -1677,8 +1687,8 @@ window.showCharDetail = function(idx) {
 
   // Portrait
   const portrait = document.getElementById('char-detail-portrait');
-  portrait.src = splash;
-  portrait.onerror = () => { portrait.src = char.image || ''; };
+  portrait.src = optImg(splash, 560);
+  portrait.onerror = () => { portrait.onerror = null; portrait.src = optImg(char.image, 200) || ''; };
 
   // Left panel accent colour
   document.getElementById('char-detail-left').style.background =
@@ -1831,7 +1841,7 @@ function renderCharWeapon(wpnRow, w) {
   if (!w || !w.name) { wpnRow.innerHTML = `<p class="empty-text">No weapon data</p>`; return; }
   const wpnStars = rarityStars(w.rarity, w.rarity >= 5 ? '#d4a017' : '#9b59b6');
   const wpnIcon  = w.icon
-    ? `<img src="${w.icon}" class="char-detail-wpn-icon" alt="${esc(w.name)}" onerror="this.style.display='none'">`
+    ? `<img src="${optImg(w.icon, 100)}" class="char-detail-wpn-icon" alt="${esc(w.name)}" onerror="this.style.display='none'">`
     : '';
   wpnRow.innerHTML = `
     <div class="char-wpn-card">
@@ -1860,7 +1870,7 @@ function renderCharArtifacts(slots, setBonuses, relics) {
     if (r) {
       slotsHtml += `
         <div class="char-artifact-slot filled" title="${esc(r.name || '')} — ${esc(r.set?.name || '')}" style="border-color:${r.rarity >= 5 ? '#d4a01755' : '#9b59b655'}">
-          ${r.icon ? `<img src="${r.icon}" alt="${POS_NAMES[pos]}" onerror="this.style.display='none'">` : `<span class="slot-label">${POS_NAMES[pos]}</span>`}
+          ${r.icon ? `<img src="${optImg(r.icon, 100)}" alt="${POS_NAMES[pos]}" onerror="this.style.display='none'">` : `<span class="slot-label">${POS_NAMES[pos]}</span>`}
           <span class="artifact-slot-level">+${r.level}</span>
         </div>`;
     } else {
@@ -1899,7 +1909,7 @@ function renderCharTalents(container, skills) {
     const lvl = s.level_current || s.level || 0;
     const max = s.max_level || 15;
     const cls = lvl >= 10 ? 'maxed' : lvl >= 8 ? 'high' : lvl >= 6 ? 'mid' : 'low';
-    const icon = s.icon ? `<img src="${s.icon}" alt="" onerror="this.style.display='none'">` : '';
+    const icon = s.icon ? `<img src="${optImg(s.icon, 80)}" alt="" onerror="this.style.display='none'">` : '';
     return `
       <div class="talent-pill">
         ${icon}
@@ -2038,8 +2048,8 @@ function renderBuildPriorities() {
     const i = idx(c);
     return `
       <div class="build-row" onclick="showCharDetail(${i})" title="Click to see ${esc(name)}'s details">
-        <img class="build-row-avatar" src="${avatarUrl}" alt="${esc(name)}"
-             onerror="this.onerror=null;this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
+        <img class="build-row-avatar" src="${optImg(avatarUrl, 110)}" alt="${esc(name)}"
+             onerror="this.onerror=null;this.src='${optImg('https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png', 110)}'">
         <div class="build-row-info">
           <span class="build-row-name">${esc(name)}</span>
           <div class="build-row-tags">${tagsHtml}</div>
@@ -2390,7 +2400,7 @@ function renderWishUI(data) {
 
     return `
       <div class="pity-card" style="--pity-color:${b.color}">
-        <img class="pity-banner-icon" src="${b.icon}" alt="${b.name}" onerror="this.style.display='none'">
+        <img class="pity-banner-icon" src="${optImg(b.icon, 92)}" alt="${b.name}" onerror="this.style.display='none'">
         <div class="pity-name">${b.name}</div>
         <div class="pity-count ${danger ? 'pity-danger' : ''}">${pity}</div>
         <div class="pity-label">pity since last ${SVG.star4(10,'#d4a017')}5</div>
@@ -2819,8 +2829,8 @@ function updateCharactersCatalogUI() {
     html += `
       <div class="char-card rarity-${char.rarity}" data-element="${esc(char.element)}" onclick="showCharDetail(${idx})" title="${esc(displayName)}">
         <div class="char-portrait">
-          <img src="${iconUrl}" alt="${esc(displayName)}"
-               onerror="this.onerror=null;this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
+          <img src="${optImg(iconUrl, 200)}" alt="${esc(displayName)}"
+               onerror="this.onerror=null;this.src='${optImg('https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png', 200)}'">
           <div class="char-element-badge">${getElementSVG(char.element)}</div>
         </div>
         <div class="char-info">
@@ -2857,7 +2867,7 @@ function updateOculiTracker() {
     const pct   = max ? Math.round(count / max * 100) : null;
     const badge = max ? `<span class="oculus-pct" style="color:${col}">${pct}%</span>` : '';
     const img   = icon && icon.path
-      ? `<img src="${icon.path}" alt="${key}" style="width:18px;height:18px;vertical-align:middle;margin-right:4px">`
+      ? `<img src="${optImg(icon.path, 36)}" alt="${key}" style="width:18px;height:18px;vertical-align:middle;margin-right:4px">`
       : '';
     return `
       <div class="oculus-chip" title="${OCULI_LABELS[key]}: ${count}${max ? ' / ' + max : ''}">
@@ -2900,7 +2910,7 @@ function updateExplorationsUI() {
     html += `
       <div class="explore-card${pct >= 100 ? ' explore-complete' : ''}">
         <div class="explore-header">
-          <img src="${mapIconUrl}" class="explore-icon" alt="${exp.name}" onerror="this.onerror=null;this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
+          <img src="${optImg(mapIconUrl, 100)}" class="explore-icon" alt="${exp.name}" onerror="this.onerror=null;this.src='${optImg('https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png', 100)}'">
           <div class="explore-title-col">
             <span class="explore-name">${exp.name}</span>
             ${offeringBadges ? `<div class="explore-offerings">${offeringBadges}</div>` : ''}
@@ -2956,7 +2966,7 @@ function updateAbyssUI() {
     const r = rankArr[0];
     const nm = rankName(r);
     const avatar = r.avatar_icon
-      ? `<img src="${r.avatar_icon}" class="abyss-rank-avatar" alt="${esc(nm)}">` : '';
+      ? `<img src="${optImg(r.avatar_icon, 52)}" class="abyss-rank-avatar" alt="${esc(nm)}">` : '';
     return `<div class="abyss-rank-row">
       <span class="abyss-rank-label">${label}</span>
       <span class="abyss-rank-val ${cls}">${avatar}${esc(nm)} — ${valFn(r)}</span>
@@ -3210,7 +3220,7 @@ function renderMetaTierTable(container, roles, ownedCharsMap) {
     const imgUrl = char.iconUrl || getIcyVeinsPortrait(char.name);
     const badgeCls = res.status === 'owned-built' ? 'owned' : res.status === 'owned-unbuilt' ? 'owned-unbuilt' : 'missing';
     return `<div class="meta-char-badge ${badgeCls}" title="${esc(char.name)} — ${esc(res.statusText)}">
-      <img src="${imgUrl}" alt="${esc(char.name)}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
+      <img src="${optImg(imgUrl, 100)}" alt="${esc(char.name)}" onerror="this.onerror=null;this.src='${optImg(PAIMON_ICON, 100)}'">
       <span>${esc(char.name)}</span>
     </div>`;
   };
@@ -3286,7 +3296,7 @@ function renderTargetTeams(container, targetTeams, ownedCharsMap) {
       const tierB = c.tier && c.tier !== '?' ? `<span class="char-mini-tier ${tierCls(c.tier)}">${esc(c.tier)}</span>` : '';
       html += `<div class="target-team-char ${statusCls}" title="${esc(c.name)}${owned ? '' : ''} (${esc(c.tier || '?')})">
         <div class="target-char-img-wrap">
-          <img src="${imgUrl}" alt="${esc(c.name)}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
+          <img src="${optImg(imgUrl, 100)}" alt="${esc(c.name)}" onerror="this.onerror=null;this.src='${optImg(PAIMON_ICON, 100)}'">
           ${tierB}
         </div>
         <span>${esc(c.name)}</span>
@@ -3316,7 +3326,7 @@ function renderBuildRoadmap(container, buildNow, pullTargets) {
     const img = c.iconUrl || getIcyVeinsPortrait(c.name);
     const rolesText = [...new Set(c.roles)].slice(0, 3).join(' · ');
     return `<div class="roadmap-item${isMissing ? ' missing' : ''}">
-      <img src="${img}" alt="${esc(c.name)}" onerror="this.onerror=null;this.src='${PAIMON_ICON}'">
+      <img src="${optImg(img, 90)}" alt="${esc(c.name)}" onerror="this.onerror=null;this.src='${optImg(PAIMON_ICON, 90)}'">
       <div class="roadmap-info">
         <span class="roadmap-name">${esc(c.name)}</span>
         <span class="roadmap-roles">${esc(rolesText)}</span>

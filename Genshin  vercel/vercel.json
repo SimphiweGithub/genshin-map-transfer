@@ -10,6 +10,16 @@
       "maxDuration": 30
     }
   },
+  "images": {
+    "remotePatterns": [
+      { "protocol": "https", "hostname": "**.hoyolab.com" },
+      { "protocol": "https", "hostname": "**.hoyoverse.com" },
+      { "protocol": "https", "hostname": "gi.yatta.moe" },
+      { "protocol": "https", "hostname": "static.icy-veins.com" }
+    ],
+    "formats": ["image/webp"],
+    "minimumCacheTTL": 604800
+  },
   "headers": [
     {
       "source": "/(.*)",
