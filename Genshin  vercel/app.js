@@ -1373,16 +1373,32 @@ function updateCustomTimersRealtime() {
   container.innerHTML = html;
 }
 
-// Resolve expedition character name with fallbacks for hashed CDN URLs
+// Resolve expedition character name with fallbacks for hashed CDN URLs.
+// dailyNote (expeditions) loads before the index API (state.characters), so
+// this must run at render time, not at parse time.
 function resolveExpName(ex) {
   if (ex.name !== 'Character') return ex.name;
-  // Try by character ID (from API field or URL extraction)
-  if (ex.charId && state.characters?.length) {
+  if (!state.characters?.length) return 'Character';
+
+  // Strongest signal: expeditions' avatar_side_icon and a character's own
+  // .icon field are the SAME side-icon asset for that character — even when
+  // HoYoLAB serves opaque hashed filenames, an exact URL match still works
+  // because it's a direct reference comparison, not name parsing.
+  if (ex.avatar) {
+    const norm = u => (u || '').split('?')[0].replace(/^https?:/, '');
+    const target = norm(ex.avatar);
+    const c = state.characters.find(c => norm(c.icon) === target || norm(c.image) === target);
+    if (c) return getCharDisplayName(c);
+  }
+
+  // Fallback: character ID (from API field or URL extraction)
+  if (ex.charId) {
     const c = state.characters.find(c => c.id == ex.charId);
     if (c) return getCharDisplayName(c);
   }
-  // Try slug matching of character name substring in avatar URL
-  if (ex.avatar && state.characters?.length) {
+
+  // Last resort: slug matching of character name substring in avatar URL
+  if (ex.avatar) {
     for (const c of state.characters) {
       const dn = getCharDisplayName(c);
       const slug = dn.toLowerCase().replace(/[^a-z]/g, '');
