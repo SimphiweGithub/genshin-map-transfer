@@ -2008,7 +2008,7 @@ function renderBuildPriorities() {
     return `
       <div class="build-row" onclick="showCharDetail(${i})" title="Click to see ${esc(name)}'s details">
         <img class="build-row-avatar" src="${avatarUrl}" alt="${esc(name)}"
-             onerror="this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
+             onerror="this.onerror=null;this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
         <div class="build-row-info">
           <span class="build-row-name">${esc(name)}</span>
           <div class="build-row-tags">${tagsHtml}</div>
@@ -2789,7 +2789,7 @@ function updateCharactersCatalogUI() {
       <div class="char-card rarity-${char.rarity}" data-element="${esc(char.element)}" onclick="showCharDetail(${idx})" title="${esc(displayName)}">
         <div class="char-portrait">
           <img src="${iconUrl}" alt="${esc(displayName)}"
-               onerror="this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
+               onerror="this.onerror=null;this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
           <div class="char-element-badge">${getElementSVG(char.element)}</div>
         </div>
         <div class="char-info">
@@ -2869,7 +2869,7 @@ function updateExplorationsUI() {
     html += `
       <div class="explore-card${pct >= 100 ? ' explore-complete' : ''}">
         <div class="explore-header">
-          <img src="${mapIconUrl}" class="explore-icon" alt="${exp.name}" onerror="this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
+          <img src="${mapIconUrl}" class="explore-icon" alt="${exp.name}" onerror="this.onerror=null;this.src='https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png'">
           <div class="explore-title-col">
             <span class="explore-name">${exp.name}</span>
             ${offeringBadges ? `<div class="explore-offerings">${offeringBadges}</div>` : ''}
