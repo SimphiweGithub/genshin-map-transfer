@@ -863,7 +863,7 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 /* Character grid */
 .characters-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 10px;
   max-height: 720px;
   overflow-y: auto;
@@ -882,9 +882,6 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
   transition: transform .15s, box-shadow .15s;
 }
 .char-card:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0,0,0,.55); }
-
-.char-card.rarity-5 { border-color: rgba(212,160,23,.35); }
-.char-card.rarity-4 { border-color: rgba(155,89,182,.3); }
 
 /* Portrait area — square, matches the 256x256 avatar face icon */
 .char-portrait {
@@ -944,20 +941,20 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 .char-meta  { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
 .char-level { font-size: .6rem; color: var(--text-muted); }
 .char-const {
-  background: rgba(211,188,142,.08);
-  color: var(--gold-light, #d3bc8e);
-  border: 1px solid rgba(211,188,142,.28);
+  background: rgba(69,197,228,.08);
+  color: var(--cyan-primary);
+  border: 1px solid rgba(69,197,228,.22);
   font-size: .56rem; padding: 1px 5px; border-radius: 4px; font-weight: 700; letter-spacing: .3px;
 }
 
-/* Element border-top colors */
-.char-card[data-element="Pyro"]    { border-top: 2px solid var(--el-pyro); }
-.char-card[data-element="Hydro"]   { border-top: 2px solid var(--el-hydro); }
-.char-card[data-element="Anemo"]   { border-top: 2px solid var(--el-anemo); }
-.char-card[data-element="Electro"] { border-top: 2px solid var(--el-electro); }
-.char-card[data-element="Cryo"]    { border-top: 2px solid var(--el-cryo); }
-.char-card[data-element="Geo"]     { border-top: 2px solid var(--el-geo); }
-.char-card[data-element="Dendro"]  { border-top: 2px solid var(--el-dendro); }
+/* Full element-colored border, all four sides */
+.char-card[data-element="Pyro"]    { border-color: var(--el-pyro); }
+.char-card[data-element="Hydro"]   { border-color: var(--el-hydro); }
+.char-card[data-element="Anemo"]   { border-color: var(--el-anemo); }
+.char-card[data-element="Electro"] { border-color: var(--el-electro); }
+.char-card[data-element="Cryo"]    { border-color: var(--el-cryo); }
+.char-card[data-element="Geo"]     { border-color: var(--el-geo); }
+.char-card[data-element="Dendro"]  { border-color: var(--el-dendro); }
 
 /* ── Spiral Abyss ────────────────────────────────────────────────────────── */
 .abyss-overview { display: flex; flex-direction: column; gap: 18px; }
