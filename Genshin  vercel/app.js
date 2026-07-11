@@ -1373,6 +1373,17 @@ function updateCustomTimersRealtime() {
   container.innerHTML = html;
 }
 
+// HoYoLAB's asset CDN shards images as /item_icon/{charDirHash}/{variantHash}.png
+// — the directory hash is stable per character across image variants (front
+// icon, card image, side icon), only the filename hash differs per variant.
+// So the directory segment is the real join key between an expedition's
+// avatar_side_icon and a character's own image/card_image.
+function extractAssetDirHash(url) {
+  if (!url) return null;
+  const m = url.match(/\/item_icon\/([0-9a-f]+)\//i);
+  return m ? m[1] : null;
+}
+
 // Resolve expedition character name with fallbacks for hashed CDN URLs.
 // dailyNote (expeditions) loads before the index API (state.characters), so
 // this must run at render time, not at parse time.
@@ -1380,15 +1391,16 @@ function resolveExpName(ex) {
   if (ex.name !== 'Character') return ex.name;
   if (!state.characters?.length) return 'Character';
 
-  // Strongest signal: expeditions' avatar_side_icon and a character's own
-  // .icon field are the SAME side-icon asset for that character — even when
-  // HoYoLAB serves opaque hashed filenames, an exact URL match still works
-  // because it's a direct reference comparison, not name parsing.
+  // Strongest signal: match by the per-character CDN directory hash shared
+  // between the expedition's avatar and the character's own image assets.
   if (ex.avatar) {
-    const norm = u => (u || '').split('?')[0].replace(/^https?:/, '');
-    const target = norm(ex.avatar);
-    const c = state.characters.find(c => norm(c.icon) === target || norm(c.image) === target);
-    if (c) return getCharDisplayName(c);
+    const expDir = extractAssetDirHash(ex.avatar);
+    if (expDir) {
+      const c = state.characters.find(c =>
+        extractAssetDirHash(c.image) === expDir || extractAssetDirHash(c.card_image) === expDir
+      );
+      if (c) return getCharDisplayName(c);
+    }
   }
 
   // Fallback: character ID (from API field or URL extraction)
