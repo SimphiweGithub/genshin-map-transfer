@@ -1,6 +1,6 @@
 /* Teyvat Chrono service worker — offline shell + installability.
    Bump CACHE version to force clients to refresh cached assets. */
-const CACHE = 'teyvat-chrono-v15';
+const CACHE = 'teyvat-chrono-v16';
 const SHELL = ['/', '/index.html', '/styles.css', '/icon.svg', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -49,8 +49,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cross-origin (game asset CDN, fonts): try network, fall back to cache if present.
-  event.respondWith(fetch(req).catch(() => caches.match(req)));
+  // Cross-origin (game asset CDN, fonts): try network, fall back to cache if
+  // present. respondWith() must always resolve to a real Response — if the
+  // fetch fails AND there's no cached copy, caches.match() resolves to
+  // undefined, which throws "Failed to convert value to 'Response'" and can
+  // break every cross-origin image on the page at once. Fall back to an
+  // explicit error Response so the browser just treats it as a normal failed
+  // image load (the page's own onerror fallback handles the rest).
+  event.respondWith(
+    fetch(req).catch(() =>
+      caches.match(req).then((cached) => cached || new Response(null, { status: 502, statusText: 'Bad Gateway' }))
+    )
+  );
 });
 
 // Let the page tell an updated SW to activate immediately.
