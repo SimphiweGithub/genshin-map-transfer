@@ -1715,6 +1715,7 @@ window.showCharDetail = function(idx) {
   wpnRow.innerHTML   = `<p class="empty-text" style="opacity:.5">Loading…</p>`;
   slots.innerHTML    = `<p class="empty-text" style="opacity:.5">Loading…</p>`;
   setBonuses.innerHTML = '';
+  document.getElementById('char-detail-buildstats-section').style.display = 'none';
 
   // Show overlay immediately with base info
   document.getElementById('char-detail-overlay').classList.remove('hidden');
@@ -1726,6 +1727,7 @@ window.showCharDetail = function(idx) {
     renderCharTalents(talentsEl, cached.skills || []);
     renderCharWeapon(wpnRow, cached.weapon);
     renderCharArtifacts(slots, setBonuses, cached.relics || []);
+    renderBuildStats(cached);
   } else if (state.uid && state.server && state.ltoken && state.ltuid) {
     fetch('/api/hoyolab', {
       method: 'POST',
@@ -1745,6 +1747,7 @@ window.showCharDetail = function(idx) {
         renderCharTalents(talentsEl, detail.skills || []);
         renderCharWeapon(wpnRow, detail.weapon);
         renderCharArtifacts(slots, setBonuses, detail.relics || []);
+        renderBuildStats(detail);
       })
       .catch(() => {
         talentsEl.innerHTML = `<p class="empty-text">Failed to load</p>`;
@@ -1755,8 +1758,74 @@ window.showCharDetail = function(idx) {
     talentsEl.innerHTML = `<p class="empty-text">Connect credentials to see talent data</p>`;
     wpnRow.innerHTML = `<p class="empty-text">Connect credentials to see weapon data</p>`;
     slots.innerHTML  = `<p class="empty-text">Connect credentials to see artifact data</p>`;
+    document.getElementById('char-detail-buildstats-section').style.display = 'none';
   }
 };
+
+// FightPropType 20 = CRIT Rate%, 22 = CRIT DMG% on relic sub/main stats —
+// verified against real per-roll value ranges (a substat can only be one or
+// the other given the numeric range it falls in), not guessed from a name.
+// Flower's main stat is always flat HP and Plume's is always flat ATK by
+// game design, and every weapon's main stat is always flat ATK — these are
+// the only stat fields read here, all confirmed against real API samples.
+function renderBuildStats(detail) {
+  const section = document.getElementById('char-detail-buildstats-section');
+  const row = document.getElementById('char-detail-build-stats');
+  const enkaLink = document.getElementById('char-detail-enka-link');
+  if (!detail || !detail.relics?.length) { section.style.display = 'none'; return; }
+
+  let critRate = 5;  // base CRIT Rate every character starts with
+  let critDmg = 50;  // base CRIT DMG every character starts with
+  detail.relics.forEach(r => {
+    (r.sub_property_list || []).forEach(sp => {
+      const val = parseFloat(sp.value);
+      if (isNaN(val)) return;
+      if (sp.property_type === 20) critRate += val;
+      if (sp.property_type === 22) critDmg += val;
+    });
+    // Only the Circlet slot can roll CRIT as a main stat; other slots'
+    // main stats are fixed by game design and never CRIT Rate/DMG.
+    if (r.main_property) {
+      const val = parseFloat(r.main_property.value);
+      if (!isNaN(val)) {
+        if (r.main_property.property_type === 20) critRate += val;
+        if (r.main_property.property_type === 22) critDmg += val;
+      }
+    }
+  });
+  const critValue = 2 * critRate + critDmg;
+  const cvTier = critValue >= 220 ? 'excellent' : critValue >= 180 ? 'good' : critValue >= 140 ? 'ok' : 'low';
+  const cvLabel = { excellent: 'Excellent', good: 'Good', ok: 'Decent', low: 'Needs Work' }[cvTier];
+
+  const weaponAtk = detail.weapon?.main_property?.final ? Math.round(parseFloat(detail.weapon.main_property.final)) : null;
+
+  row.innerHTML = `
+    <div class="build-stat-box">
+      <span class="build-stat-val text-red">${critRate.toFixed(1)}%</span>
+      <span class="build-stat-lbl">CRIT Rate</span>
+    </div>
+    <div class="build-stat-box">
+      <span class="build-stat-val text-gold">${critDmg.toFixed(1)}%</span>
+      <span class="build-stat-lbl">CRIT DMG</span>
+    </div>
+    <div class="build-stat-box build-stat-box--cv cv-${cvTier}">
+      <span class="build-stat-val">${critValue.toFixed(1)}</span>
+      <span class="build-stat-lbl">Crit Value <span class="cv-tag">${cvLabel}</span></span>
+    </div>
+    ${weaponAtk ? `<div class="build-stat-box">
+      <span class="build-stat-val text-cyan">${weaponAtk}</span>
+      <span class="build-stat-lbl">Weapon ATK</span>
+    </div>` : ''}
+  `;
+
+  section.style.display = '';
+  if (state.uid) {
+    enkaLink.href = `https://enka.network/u/${encodeURIComponent(state.uid)}/`;
+    enkaLink.style.display = '';
+  } else {
+    enkaLink.style.display = 'none';
+  }
+}
 
 function renderCharWeapon(wpnRow, w) {
   if (!w || !w.name) { wpnRow.innerHTML = `<p class="empty-text">No weapon data</p>`; return; }

@@ -1292,6 +1292,31 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
   border-bottom: 1px solid rgba(200,160,90,.15);
 }
 
+/* Build Stats */
+.build-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; }
+.build-stat-box {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(211,188,142,.14);
+  border-radius: 8px;
+  padding: 10px 8px;
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 3px;
+}
+.build-stat-val { font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
+.build-stat-lbl { font-size: .6rem; text-transform: uppercase; letter-spacing: .6px; color: var(--text-muted); }
+.build-stat-box--cv { border-color: rgba(211,188,142,.3); }
+.cv-tag { display: block; font-size: .58rem; margin-top: 1px; }
+.build-stat-box.cv-excellent .build-stat-val, .build-stat-box.cv-excellent .cv-tag { color: #d4a017; }
+.build-stat-box.cv-good .build-stat-val, .build-stat-box.cv-good .cv-tag { color: #74c2a0; }
+.build-stat-box.cv-ok .build-stat-val, .build-stat-box.cv-ok .cv-tag { color: #c8a040; }
+.build-stat-box.cv-low .build-stat-val, .build-stat-box.cv-low .cv-tag { color: #e84a5f; }
+
+.build-stats-link {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: .72rem; color: var(--cyan-primary);
+  text-decoration: none; align-self: flex-start;
+}
+.build-stats-link:hover { text-decoration: underline; }
+
 /* Weapon */
 .char-detail-weapon-row { display: flex; }
 
