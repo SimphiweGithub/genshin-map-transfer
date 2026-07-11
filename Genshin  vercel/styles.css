@@ -1159,6 +1159,45 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
   box-shadow: 0 24px 80px rgba(0,0,0,.7);
 }
 
+/* Corner bracket decorations — same motif as .glass-card, reapplied here
+   because the modal keeps its own distinct background/border. */
+.char-detail-modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  background-image:
+    linear-gradient(to right,  rgba(211,188,142,.8) 12px, transparent 12px),
+    linear-gradient(to bottom, rgba(211,188,142,.8) 12px, transparent 12px),
+    linear-gradient(to left,   rgba(211,188,142,.8) 12px, transparent 12px),
+    linear-gradient(to bottom, rgba(211,188,142,.8) 12px, transparent 12px),
+    linear-gradient(to right,  rgba(211,188,142,.8) 12px, transparent 12px),
+    linear-gradient(to top,    rgba(211,188,142,.8) 12px, transparent 12px),
+    linear-gradient(to left,   rgba(211,188,142,.8) 12px, transparent 12px),
+    linear-gradient(to top,    rgba(211,188,142,.8) 12px, transparent 12px);
+  background-repeat: no-repeat;
+  background-size:
+    12px 1.5px, 1.5px 12px,
+    12px 1.5px, 1.5px 12px,
+    12px 1.5px, 1.5px 12px,
+    12px 1.5px, 1.5px 12px;
+  background-position:
+    5px 5px, 5px 5px,
+    calc(100% - 5px) 5px, calc(100% - 5px) 5px,
+    5px calc(100% - 5px), 5px calc(100% - 5px),
+    calc(100% - 5px) calc(100% - 5px), calc(100% - 5px) calc(100% - 5px);
+}
+.char-detail-modal::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(211,188,142,.12);
+  border-radius: 10px;
+  pointer-events: none;
+  z-index: 5;
+}
+
 .char-detail-close {
   position: absolute;
   top: 10px;
@@ -1288,8 +1327,17 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
   letter-spacing: 1.5px;
   color: rgba(200,160,90,.7);
   margin: 0;
-  padding-bottom: 4px;
-  border-bottom: 1px solid rgba(200,160,90,.15);
+  padding-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.char-detail-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(200,160,90,.35), transparent);
+  min-width: 20px;
 }
 
 /* Build Stats */
