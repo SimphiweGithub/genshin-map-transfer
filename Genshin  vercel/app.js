@@ -80,12 +80,23 @@ function parseCharacterNameFromIcon(url) {
                      .replace(/^AvatarIcon_/, '');
                      
     if (!rawName) return "Character";
-    
+
     let readable = rawName.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ');
     return readable || "Character";
   } catch (e) {
     return "Character";
   }
+}
+
+// Resolve a character name from any HoYoLAB payload shape that gives an id
+// and/or icon but usually no name (Abyss rank entries, Abyss battle avatars) —
+// cross-reference the owned roster first, fall back to parsing the icon URL.
+function resolveAbyssCharName(id, icon, name) {
+  if (name) return name;
+  const c = (state.characters || []).find(ch => ch.id == id);
+  if (c) return getCharDisplayName(c);
+  const parsed = parseCharacterNameFromIcon(icon || '');
+  return parsed && parsed !== 'Character' ? parsed : 'Character';
 }
 
 // ── Domain icon SVG helpers ───────────────────────────────────────────────
@@ -781,6 +792,8 @@ async function handleRefresh() {
     const abyssData = await fetchHoyolabAPI("spiralAbyss", { schedule_type: "1" });
     if (abyssData.retcode === 0) {
       state.abyss = abyssData.data;
+      saveAbyssSnapshot(abyssData.data);
+      if (abyssData.data.schedule_id) await backfillPreviousAbyssSeason(abyssData.data.schedule_id);
     }
   } catch (err) {
     console.error("Error fetching spiralAbyss:", err);
@@ -2150,6 +2163,49 @@ const STD_WEAPONS_SET = new Set(STANDARD_5STAR_WEAPONS.map(normName));
 
 const BANNER_STORAGE_KEY = 'teyvatChrono_banners_v1';
 const WISH_STORAGE_KEY = 'teyvatChrono_wishes_v1';
+const ABYSS_HISTORY_KEY = 'teyvatChrono_abyssHistory_v1';
+const ABYSS_BACKFILL_FLAG_KEY = 'teyvatChrono_abyssBackfilledFor_v1';
+
+// HoYoLAB's spiralAbyss endpoint only ever returns the current season
+// (schedule_type=1) and the immediately preceding one (schedule_type=2) —
+// anything older is gone server-side. Snapshot each season we see into
+// localStorage so a real history can build up over time.
+function loadAbyssHistory() {
+  try { return JSON.parse(localStorage.getItem(ABYSS_HISTORY_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function saveAbyssSnapshot(d) {
+  if (!d || !d.schedule_id) return;
+  const history = loadAbyssHistory();
+  const snapshot = {
+    schedule_id: d.schedule_id,
+    start_time: d.start_time,
+    end_time: d.end_time,
+    max_floor: d.max_floor,
+    total_star: d.total_star,
+    total_battle_times: d.total_battle_times,
+    total_win_times: d.total_win_times,
+  };
+  const idx = history.findIndex(h => h.schedule_id === d.schedule_id);
+  if (idx >= 0) history[idx] = snapshot; else history.push(snapshot);
+  history.sort((a, b) => Number(a.schedule_id) - Number(b.schedule_id));
+  localStorage.setItem(ABYSS_HISTORY_KEY, JSON.stringify(history));
+}
+
+// One-time-per-season-transition fetch of the "previous" season so a fresh
+// install still gets one extra season of history for free, without an extra
+// API call on every single page load.
+async function backfillPreviousAbyssSeason(currentScheduleId) {
+  try {
+    if (localStorage.getItem(ABYSS_BACKFILL_FLAG_KEY) === String(currentScheduleId)) return;
+    const prev = await fetchHoyolabAPI("spiralAbyss", { schedule_type: "2" });
+    if (prev.retcode === 0 && prev.data) saveAbyssSnapshot(prev.data);
+    localStorage.setItem(ABYSS_BACKFILL_FLAG_KEY, String(currentScheduleId));
+  } catch (err) {
+    console.error("Error backfilling previous Abyss season:", err);
+  }
+}
 
 function loadStoredWishes() {
   try { return JSON.parse(localStorage.getItem(WISH_STORAGE_KEY) || 'null'); }
@@ -2929,8 +2985,15 @@ function updateExplorationsUI() {
 // Draw Spiral Abyss Status
 function updateAbyssUI() {
   const container = document.getElementById("abyss-combat-summary");
+
+  // Season history is stored locally and outlives the current fetch, so it
+  // renders regardless of whether state.abyss is populated right now.
+  renderAbyssHistory();
+
   if (!state.abyss) {
     container.innerHTML = `<p class="empty-text">No Abyss stats synced. Please check connection.</p>`;
+    renderAbyssTeamComps(null);
+    renderAbyssTiming(null);
     return;
   }
 
@@ -2950,21 +3013,11 @@ function updateAbyssUI() {
     floorsHtml += '<p class="empty-text">No floor data for this period.</p>';
   }
 
-  // Resolve a rank entry's character name — the abyss API returns avatar_id +
-  // avatar_icon but usually NO name, so cross-reference the owned roster.
-  const rankName = (r) => {
-    if (r.avatar_name) return r.avatar_name;
-    const c = (state.characters || []).find(ch => ch.id == r.avatar_id);
-    if (c) return getCharDisplayName(c);
-    const parsed = parseCharacterNameFromIcon(r.avatar_icon || '');
-    return parsed && parsed !== 'Character' ? parsed : 'Character';
-  };
-
   // Right column: combat records with avatars
   const rankRow = (label, rankArr, valFn, cls) => {
     if (!rankArr || !rankArr.length) return '';
     const r = rankArr[0];
-    const nm = rankName(r);
+    const nm = resolveAbyssCharName(r.avatar_id, r.avatar_icon, r.avatar_name);
     const avatar = r.avatar_icon
       ? `<img src="${optImg(r.avatar_icon, 52)}" class="abyss-rank-avatar" alt="${esc(nm)}">` : '';
     return `<div class="abyss-rank-row">
@@ -2973,23 +3026,24 @@ function updateAbyssUI() {
     </div>`;
   };
 
-  const hasCombat = d.total_battle_num || d.total_win_num ||
+  const hasCombat = d.total_battle_times || d.total_win_times ||
     d.reveal_rank?.length || d.defeat_rank?.length || d.damage_rank?.length ||
-    d.energy_skill_rank?.length || d.take_damage_rank?.length;
+    d.energy_skill_rank?.length || d.take_damage_rank?.length || d.normal_skill_rank?.length;
 
   let rankHtml = '<p class="abyss-col-label">Combat Records</p>';
   if (hasCombat) {
-    if (d.total_battle_num || d.total_win_num) {
+    if (d.total_battle_times || d.total_win_times) {
       rankHtml += `<div class="abyss-battle-summary">
-        ${d.total_battle_num ? `<span class="text-cyan">${d.total_battle_num} Battles</span>` : ''}
-        ${d.total_win_num   ? `<span class="text-green">${d.total_win_num} Wins</span>` : ''}
+        ${d.total_battle_times ? `<span class="text-cyan">${d.total_battle_times} Battles</span>` : ''}
+        ${d.total_win_times   ? `<span class="text-green">${d.total_win_times} Wins</span>` : ''}
       </div>`;
     }
-    rankHtml += rankRow('Most Revealed',    d.reveal_rank,       r => `${r.value} times`,                'text-gold');
-    rankHtml += rankRow('Most Kills',       d.defeat_rank,       r => `${r.value} kills`,                'text-red');
-    rankHtml += rankRow('Strongest Strike', d.damage_rank,       r => `${r.value.toLocaleString()} DMG`, 'text-purple');
-    rankHtml += rankRow('Strongest Burst',  d.energy_skill_rank, r => `${r.value.toLocaleString()} DMG`, 'text-cyan');
-    rankHtml += rankRow('Most Dmg Taken',   d.take_damage_rank,  r => `${r.value.toLocaleString()} DMG`, 'text-red');
+    rankHtml += rankRow('Most Revealed',      d.reveal_rank,       r => `${r.value} times`,                'text-gold');
+    rankHtml += rankRow('Most Kills',         d.defeat_rank,       r => `${r.value} kills`,                'text-red');
+    rankHtml += rankRow('Strongest Strike',   d.damage_rank,       r => `${r.value.toLocaleString()} DMG`, 'text-purple');
+    rankHtml += rankRow('Strongest Burst',    d.energy_skill_rank, r => `${r.value.toLocaleString()} DMG`, 'text-cyan');
+    rankHtml += rankRow('Most Normal Attack', d.normal_skill_rank, r => `${r.value.toLocaleString()} DMG`, 'text-gold');
+    rankHtml += rankRow('Most Dmg Taken',     d.take_damage_rank,  r => `${r.value.toLocaleString()} DMG`, 'text-red');
   } else {
     rankHtml += '<p class="empty-text">No combat history for this period.</p>';
   }
@@ -2998,6 +3052,155 @@ function updateAbyssUI() {
     <div class="abyss-two-col">
       <div class="abyss-col-floors">${floorsHtml}</div>
       <div class="abyss-col-ranks">${rankHtml}</div>
+    </div>`;
+
+  renderAbyssTeamComps(d);
+  renderAbyssTiming(d);
+}
+
+// Team compositions used per chamber, plus a season-wide "most used" tally —
+// pulled from floors[].levels[].battles[].avatars, which was fetched but
+// never actually rendered anywhere before.
+function renderAbyssTeamComps(d) {
+  const container = document.getElementById('abyss-team-comps');
+  if (!container) return;
+
+  const floors = (d?.floors || []).filter(fl => fl.levels && fl.levels.length);
+  if (!floors.length) {
+    container.innerHTML = '<p class="empty-text">No battle data for this period.</p>';
+    return;
+  }
+
+  const freq = new Map();
+  floors.forEach(fl => (fl.levels || []).forEach(lv => (lv.battles || []).forEach(b => {
+    (b.avatars || []).forEach(av => {
+      const nm = resolveAbyssCharName(av.id, av.icon, av.name);
+      const prev = freq.get(av.id);
+      freq.set(av.id, { name: nm, icon: av.icon, count: (prev?.count || 0) + 1 });
+    });
+  })));
+  const freqArr = [...freq.values()].sort((a, b) => b.count - a.count).slice(0, 8);
+  const maxCount = freqArr[0]?.count || 1;
+
+  const freqHtml = freqArr.length ? `
+    <p class="abyss-col-label">Most Used This Season</p>
+    <div class="progress-bar-list">
+      ${freqArr.map(f => `
+        <div class="ledger-breakdown-row">
+          <div class="ledger-breakdown-info">
+            <span>${esc(f.name)}</span>
+            <span class="text-purple">${f.count}×</span>
+          </div>
+          <div class="ledger-breakdown-bar">
+            <div class="ledger-breakdown-fill" style="width:${(f.count / maxCount) * 100}%;"></div>
+          </div>
+        </div>`).join('')}
+    </div>` : '';
+
+  const floorsHtml = floors.map(fl => {
+    const levelsHtml = (fl.levels || []).filter(lv => lv.battles?.length).map(lv => {
+      const halvesHtml = lv.battles.map((b, i) => {
+        const avatarsHtml = (b.avatars || []).map(av => {
+          const nm = resolveAbyssCharName(av.id, av.icon, av.name);
+          return `<img src="${optImg(av.icon, 52)}" class="abyss-team-avatar" alt="${esc(nm)}" title="${esc(nm)}" onerror="this.style.display='none'">`;
+        }).join('');
+        return `<div class="abyss-team-half">
+          <span class="abyss-team-half-label">${i === 0 ? 'Team 1' : 'Team 2'}</span>
+          <div class="abyss-team-avatars">${avatarsHtml}</div>
+        </div>`;
+      }).join('');
+      return `<div class="abyss-team-chamber">
+        <span class="abyss-team-chamber-label">${fl.index}-${lv.index} &nbsp;${SVG.star4(9,'#d4a017')} ${lv.star}/${lv.max_star}</span>
+        <div class="abyss-team-halves">${halvesHtml}</div>
+      </div>`;
+    }).join('');
+    return levelsHtml ? `<div class="abyss-team-floor"><p class="abyss-col-label">Floor ${fl.index}</p>${levelsHtml}</div>` : '';
+  }).join('');
+
+  container.innerHTML = freqHtml + floorsHtml;
+}
+
+// Chamber timing/efficiency — derived from battles[].timestamp. This spans
+// wall-clock time between clears (menu navigation, re-teaming, etc.), not
+// pure combat time, so it's framed as "time spent" rather than DPS.
+function renderAbyssTiming(d) {
+  const container = document.getElementById('abyss-timing');
+  if (!container) return;
+
+  const floors = (d?.floors || []).filter(fl => fl.levels?.some(lv => lv.battles?.length));
+  if (!floors.length) {
+    container.innerHTML = '<p class="empty-text">No timing data for this period.</p>';
+    return;
+  }
+
+  const allStamps = [];
+  const rows = floors.map(fl => {
+    const stamps = [];
+    (fl.levels || []).forEach(lv => (lv.battles || []).forEach(b => {
+      if (b.timestamp) stamps.push(Number(b.timestamp));
+    }));
+    if (!stamps.length) return null;
+    allStamps.push(...stamps);
+    return { index: fl.index, span: Math.max(...stamps) - Math.min(...stamps) };
+  }).filter(Boolean);
+
+  if (!rows.length) {
+    container.innerHTML = '<p class="empty-text">No timestamped battles for this period.</p>';
+    return;
+  }
+
+  const fmt = (s) => {
+    const m = Math.floor(s / 60), sec = s % 60;
+    return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+  };
+  const totalSpan = Math.max(...allStamps) - Math.min(...allStamps);
+  const maxSpan = Math.max(...rows.map(r => r.span), 1);
+  const slowest = rows.reduce((a, b) => (b.span > a.span ? b : a), rows[0]);
+
+  container.innerHTML = `
+    <div class="abyss-battle-summary">
+      <span class="text-cyan">Total Session: ${fmt(totalSpan)}</span>
+      <span class="text-gold">Slowest: Floor ${slowest.index} (${fmt(slowest.span)})</span>
+    </div>
+    <div class="progress-bar-list">
+      ${rows.map(r => `
+        <div class="ledger-breakdown-row">
+          <div class="ledger-breakdown-info">
+            <span>Floor ${r.index}</span>
+            <span class="text-purple">${fmt(r.span)}</span>
+          </div>
+          <div class="ledger-breakdown-bar">
+            <div class="ledger-breakdown-fill" style="width:${(r.span / maxSpan) * 100}%;"></div>
+          </div>
+        </div>`).join('')}
+    </div>
+    <p class="empty-text abyss-timing-note">Time between first and last clear per floor — includes menu/re-team time, not pure combat time.</p>`;
+}
+
+// Season-over-season history, read from localStorage (see saveAbyssSnapshot).
+function renderAbyssHistory() {
+  const container = document.getElementById('abyss-history');
+  if (!container) return;
+
+  const history = loadAbyssHistory().filter(h => h.schedule_id).sort((a, b) => Number(b.schedule_id) - Number(a.schedule_id));
+  if (!history.length) {
+    container.innerHTML = '<p class="empty-text">No past seasons recorded yet. History builds up locally as you visit each Abyss cycle — HoYoLAB only keeps the current and previous season server-side.</p>';
+    return;
+  }
+
+  const dateFmt = (ts) => ts ? new Date(Number(ts) * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '?';
+  container.innerHTML = `
+    <div class="progress-bar-list">
+      ${history.map(h => `
+        <div class="ledger-breakdown-row">
+          <div class="ledger-breakdown-info">
+            <span>${dateFmt(h.start_time)} – ${dateFmt(h.end_time)}</span>
+            <span class="text-gold">Floor ${h.max_floor || '—'} · ${h.total_star || 0}/36★</span>
+          </div>
+          <div class="ledger-breakdown-bar">
+            <div class="ledger-breakdown-fill" style="width:${((h.total_star || 0) / 36) * 100}%;"></div>
+          </div>
+        </div>`).join('')}
     </div>`;
 }
 

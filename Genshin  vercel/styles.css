@@ -975,6 +975,19 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 .abyss-rank-val { display: flex; align-items: center; gap: 7px; font-size: .86rem; font-weight: 600; }
 .abyss-rank-avatar { width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(211,188,142,.25); background: var(--bg-dark); flex-shrink: 0; }
 
+.abyss-section { margin-top: 30px; }
+.abyss-section .card-header { margin-bottom: 14px; }
+
+.abyss-team-floor { margin-bottom: 16px; }
+.abyss-team-chamber { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 8px 12px; background: rgba(10,14,30,.35); border-radius: 4px; border: 1px solid rgba(211,188,142,.1); margin-bottom: 6px; flex-wrap: wrap; }
+.abyss-team-chamber-label { font-size: .78rem; color: var(--text-main); display: flex; align-items: center; white-space: nowrap; }
+.abyss-team-halves { display: flex; gap: 16px; flex-wrap: wrap; }
+.abyss-team-half { display: flex; align-items: center; gap: 6px; }
+.abyss-team-half-label { font-size: .62rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+.abyss-team-avatars { display: flex; gap: 3px; }
+.abyss-team-avatar { width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(211,188,142,.25); background: var(--bg-dark); flex-shrink: 0; }
+.abyss-timing-note { font-size: .68rem; margin-top: 10px; text-align: left; }
+
 .ledger-earnings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
 .earnings-box { display: flex; align-items: center; gap: 11px; border-radius: 3px; padding: 14px; }
 .earnings-box.pr-box { background: rgba(176,141,224,.08); border: 1px solid rgba(176,141,224,.15); }
