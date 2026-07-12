@@ -3038,12 +3038,15 @@ function updateAbyssUI() {
         ${d.total_win_times   ? `<span class="text-green">${d.total_win_times} Wins</span>` : ''}
       </div>`;
     }
-    rankHtml += rankRow('Most Revealed',      d.reveal_rank,       r => `${r.value} times`,                'text-gold');
-    rankHtml += rankRow('Most Kills',         d.defeat_rank,       r => `${r.value} kills`,                'text-red');
-    rankHtml += rankRow('Strongest Strike',   d.damage_rank,       r => `${r.value.toLocaleString()} DMG`, 'text-purple');
-    rankHtml += rankRow('Strongest Burst',    d.energy_skill_rank, r => `${r.value.toLocaleString()} DMG`, 'text-cyan');
-    rankHtml += rankRow('Most Normal Attack', d.normal_skill_rank, r => `${r.value.toLocaleString()} DMG`, 'text-gold');
-    rankHtml += rankRow('Most Dmg Taken',     d.take_damage_rank,  r => `${r.value.toLocaleString()} DMG`, 'text-red');
+    rankHtml += rankRow('Most Revealed',       d.reveal_rank,       r => `${r.value} times`,                'text-gold');
+    rankHtml += rankRow('Most Kills',          d.defeat_rank,       r => `${r.value} kills`,                'text-red');
+    rankHtml += rankRow('Strongest Strike',    d.damage_rank,       r => `${r.value.toLocaleString()} DMG`, 'text-purple');
+    // normal_skill_rank / energy_skill_rank are cast counts (Elemental Skill
+    // E / Elemental Burst Q usage across the season), not damage totals —
+    // HoYoLAB's field names are misleading here.
+    rankHtml += rankRow('Most Skill (E) Casts',  d.normal_skill_rank, r => `${r.value.toLocaleString()}×`, 'text-gold');
+    rankHtml += rankRow('Most Burst (Q) Casts',  d.energy_skill_rank, r => `${r.value.toLocaleString()}×`, 'text-cyan');
+    rankHtml += rankRow('Most Dmg Taken',      d.take_damage_rank,  r => `${r.value.toLocaleString()} DMG`, 'text-red');
   } else {
     rankHtml += '<p class="empty-text">No combat history for this period.</p>';
   }
@@ -3120,9 +3123,15 @@ function renderAbyssTeamComps(d) {
   container.innerHTML = freqHtml + floorsHtml;
 }
 
-// Chamber timing/efficiency — derived from battles[].timestamp. This spans
-// wall-clock time between clears (menu navigation, re-teaming, etc.), not
-// pure combat time, so it's framed as "time spent" rather than DPS.
+// Chamber timing/efficiency — derived from battles[].timestamp. A naive
+// first-clear-to-last-clear span per floor is misleading: floors are
+// routinely cleared across separate sessions (one chamber today, the rest
+// tomorrow), and that real-world gap would silently inflate "time spent" to
+// something impossible. Instead, sum only the gaps between *consecutive*
+// clears that are under SESSION_GAP_S — anything longer is treated as a
+// break and excluded rather than counted as active time.
+const ABYSS_SESSION_GAP_S = 600; // 10 minutes
+
 function renderAbyssTiming(d) {
   const container = document.getElementById('abyss-timing');
   if (!container) return;
@@ -3133,48 +3142,54 @@ function renderAbyssTiming(d) {
     return;
   }
 
-  const allStamps = [];
   const rows = floors.map(fl => {
     const stamps = [];
     (fl.levels || []).forEach(lv => (lv.battles || []).forEach(b => {
       if (b.timestamp) stamps.push(Number(b.timestamp));
     }));
-    if (!stamps.length) return null;
-    allStamps.push(...stamps);
-    return { index: fl.index, span: Math.max(...stamps) - Math.min(...stamps) };
+    stamps.sort((a, b) => a - b);
+    if (stamps.length < 2) return null;
+
+    let active = 0, excluded = 0;
+    for (let i = 1; i < stamps.length; i++) {
+      const gap = stamps[i] - stamps[i - 1];
+      if (gap <= ABYSS_SESSION_GAP_S) active += gap; else excluded++;
+    }
+    if (active <= 0) return null;
+    return { index: fl.index, active, excluded };
   }).filter(Boolean);
 
   if (!rows.length) {
-    container.innerHTML = '<p class="empty-text">No timestamped battles for this period.</p>';
+    container.innerHTML = '<p class="empty-text">Not enough same-session battle data to estimate timing.</p>';
     return;
   }
 
   const fmt = (s) => {
-    const m = Math.floor(s / 60), sec = s % 60;
+    const m = Math.floor(s / 60), sec = Math.round(s % 60);
     return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
   };
-  const totalSpan = Math.max(...allStamps) - Math.min(...allStamps);
-  const maxSpan = Math.max(...rows.map(r => r.span), 1);
-  const slowest = rows.reduce((a, b) => (b.span > a.span ? b : a), rows[0]);
+  const totalActive = rows.reduce((sum, r) => sum + r.active, 0);
+  const maxActive = Math.max(...rows.map(r => r.active), 1);
+  const slowest = rows.reduce((a, b) => (b.active > a.active ? b : a), rows[0]);
 
   container.innerHTML = `
     <div class="abyss-battle-summary">
-      <span class="text-cyan">Total Session: ${fmt(totalSpan)}</span>
-      <span class="text-gold">Slowest: Floor ${slowest.index} (${fmt(slowest.span)})</span>
+      <span class="text-cyan">Active Time: ${fmt(totalActive)}</span>
+      <span class="text-gold">Slowest: Floor ${slowest.index} (${fmt(slowest.active)})</span>
     </div>
     <div class="progress-bar-list">
       ${rows.map(r => `
         <div class="ledger-breakdown-row">
           <div class="ledger-breakdown-info">
-            <span>Floor ${r.index}</span>
-            <span class="text-purple">${fmt(r.span)}</span>
+            <span>Floor ${r.index}${r.excluded ? ` <span class="text-muted">(${r.excluded} break${r.excluded > 1 ? 's' : ''} excluded)</span>` : ''}</span>
+            <span class="text-purple">${fmt(r.active)}</span>
           </div>
           <div class="ledger-breakdown-bar">
-            <div class="ledger-breakdown-fill" style="width:${(r.span / maxSpan) * 100}%;"></div>
+            <div class="ledger-breakdown-fill" style="width:${(r.active / maxActive) * 100}%;"></div>
           </div>
         </div>`).join('')}
     </div>
-    <p class="empty-text abyss-timing-note">Time between first and last clear per floor — includes menu/re-team time, not pure combat time.</p>`;
+    <p class="empty-text abyss-timing-note">Time between consecutive clears within a floor, excluding gaps over 10 minutes (treated as a break, not counted as active time).</p>`;
 }
 
 // Season-over-season history, read from localStorage (see saveAbyssSnapshot).
