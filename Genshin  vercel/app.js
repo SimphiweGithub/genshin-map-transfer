@@ -2585,7 +2585,7 @@ function renderPlanner(data) {
 
   out.innerHTML = `
     <div class="planner-total">
-      <span class="planner-total-val">${totalPulls.toLocaleString()}</span>
+      <div class="planner-total-row">${SVG.star4(12,'#d4a017')}<span class="planner-total-val">${totalPulls.toLocaleString()}</span>${SVG.star4(12,'#d4a017')}</div>
       <span class="planner-total-lbl">pulls available (${primos.toLocaleString()} primogems ÷ 160 + ${fate} fate)</span>
     </div>
     ${bannerRows}`;

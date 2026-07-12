@@ -2037,16 +2037,28 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 .ff-dot.ff-guar { background: rgba(200,160,64,.2); color: #d4a017; border: 1px solid rgba(200,160,64,.4); }
 
 /* Pull Planner */
-.planner-inputs { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.planner-inputs { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
 .planner-field { display: flex; flex-direction: column; gap: 4px; font-size: .62rem; text-transform: uppercase; letter-spacing: .7px; color: rgba(255,255,255,.45); }
-.planner-field input {
+.planner-input-box {
+  display: flex; align-items: center; gap: 8px;
   background: rgba(255,255,255,.05); border: 1px solid rgba(200,160,90,.2); border-radius: 8px;
-  padding: 8px 10px; color: #fff; font-size: .95rem; width: 160px; font-family: "Cinzel", serif;
+  padding: 6px 10px; width: 160px;
 }
-.planner-field input:focus { outline: none; border-color: var(--gold-primary); }
+.planner-input-box:focus-within { border-color: var(--gold-primary); }
+.planner-input-icon { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
+.planner-field input {
+  background: transparent; border: none; color: #fff; font-size: .95rem; width: 100%; font-family: "Cinzel", serif; padding: 2px 0;
+}
+.planner-field input:focus { outline: none; }
+.planner-toggle-icon { display: flex; color: var(--gold-primary); flex-shrink: 0; }
 .planner-total { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px; background: rgba(200,160,90,.06); border-radius: 10px; margin-bottom: 12px; }
+.planner-total-row { display: flex; align-items: center; gap: 10px; }
 .planner-total-val { font-family: "Cinzel", serif; font-size: 2.4rem; font-weight: 700; color: var(--gold-primary); line-height: 1; }
 .planner-total-lbl { font-size: .62rem; color: rgba(255,255,255,.4); }
+
+.planner-projection-wrap { display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; }
+.planner-projection-icon { flex-shrink: 0; color: var(--gold-primary); margin-top: 12px; }
+.planner-projection-wrap .planner-projection { flex: 1; margin-top: 0; }
 .planner-row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,.05); font-size: .78rem; flex-wrap: wrap; }
 .planner-row-icon {
   width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
