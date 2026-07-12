@@ -2400,13 +2400,14 @@ function renderWishUI(data) {
       : `<span class="pity-hot">soft pity — pull now!</span>`;
 
     return `
-      <div class="pity-card" style="--pity-color:${b.color}">
-        <img class="pity-banner-icon" src="${optImg(b.icon, 92)}" alt="${b.name}" onerror="this.style.display='none'">
+      <div class="pity-card frame-corners" style="--pity-color:${b.color}">
+        <span class="pity-icon-ring"><img class="pity-banner-icon" src="${optImg(b.icon, 92)}" alt="${b.name}" onerror="this.style.display='none'"></span>
         <div class="pity-name">${b.name}</div>
         <div class="pity-count ${danger ? 'pity-danger' : ''}">${pity}</div>
         <div class="pity-label">pity since last ${SVG.star4(10,'#d4a017')}5</div>
-        <div class="pity-bar"><div class="pity-fill" style="width:${pct}%;background:${b.color}"></div></div>
+        <div class="pity-divider"><span class="pity-divider-dot"></span></div>
         <div class="pity-tosoft">${toSoftLine}</div>
+        <div class="pity-bar"><div class="pity-fill" style="width:${pct}%;background:${b.color}"></div></div>
         ${guarBadge}
         <div class="pity-sub">${stats.total.toLocaleString()} total · ${stats.fiveStars} ${SVG.star4(10,'#d4a017')}5${stats.avgPity ? ` · avg pity ${stats.avgPity}` : ''}</div>
       </div>`;
@@ -2489,7 +2490,7 @@ function renderFiftyFifty(data) {
     }).join('');
 
     return `
-      <div class="fifty-block" style="--pity-color:${b.color}">
+      <div class="fifty-block frame-corners" style="--pity-color:${b.color}">
         <div class="fifty-head">
           <span class="fifty-title">${b.name}</span>
           <span class="fifty-flip">${flip}</span>
@@ -2560,8 +2561,11 @@ function renderPlanner(data) {
       dateStr = `<span class="proj-date">${targetDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`;
     }
 
+    const rowIcon = b.fiftyFifty === 'weapon' ? swordIcon(b.color) : SVG.people(12);
+
     return `
       <div class="planner-row">
+        <span class="planner-row-icon" style="background:${b.color}1f;color:${b.color}">${rowIcon}</span>
         <span class="planner-row-name" style="color:${b.color}">${b.name}</span>
         <span class="planner-row-detail">
           worst-case <strong>${worstGuarantee}</strong> pulls to guaranteed featured
