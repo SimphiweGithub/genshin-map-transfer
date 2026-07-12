@@ -34,7 +34,11 @@ function getElementSVG(element) {
 }
 
 const SVG = {
-  star4:  (s=16,c='currentColor') => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}"><path d="M8 0l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="${c}"/></svg>`,
+  // Two-layer sparkle: the main 4-point diamond plus a small offset glint,
+  // instead of one flat-fill path — reads as a proper gem/sparkle rather
+  // than a plain shape. Used everywhere a "star" appears (rarity, pity
+  // badges, abyss floor stars, wish dots), so this one change propagates.
+  star4:  (s=16,c='currentColor') => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}"><path d="M8 0l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="${c}"/><path d="M6 3.2l.6 1.8 1.8.6-1.8.6L6 8l-.6-1.8-1.8-.6 1.8-.6z" fill="#fff" opacity=".55"/></svg>`,
   star5:  (s=16,c='currentColor') => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}"><path d="M8 .5l2.2 4.5 5 .7-3.6 3.5.85 5L8 12l-4.45 2.2.85-5L.8 5.7l5-.7z" fill="${c}"/></svg>`,
   target: (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/><line x1="8" y1="1" x2="8" y2="3.5"/><line x1="8" y1="12.5" x2="8" y2="15"/><line x1="1" y1="8" x2="3.5" y2="8"/><line x1="12.5" y1="8" x2="15" y2="8"/></svg>`,
   dice:   (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1.5" y="1.5" width="13" height="13" rx="2"/><circle cx="5" cy="5" r="1.1" fill="currentColor"/><circle cx="11" cy="5" r="1.1" fill="currentColor"/><circle cx="8" cy="8" r="1.1" fill="currentColor"/><circle cx="5" cy="11" r="1.1" fill="currentColor"/><circle cx="11" cy="11" r="1.1" fill="currentColor"/></svg>`,
