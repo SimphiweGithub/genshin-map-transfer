@@ -275,7 +275,22 @@ let livePromoCodes = [];
 // Harmless on http://localhost; only active over https or localhost.
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch((e) =>
+    navigator.serviceWorker.register("/sw.js").then((reg) => {
+      // Browsers throttle their own automatic update-check-on-navigation to
+      // at most once per 24h, so without this a fresh deploy can silently go
+      // unnoticed by a returning visitor for a full day even after a hard
+      // refresh (hard refresh busts the page's HTTP cache, not the SW's
+      // update cycle). An explicit update() call isn't subject to that
+      // throttle. Reload once the new SW actually takes over so the fresh
+      // assets apply immediately instead of on some later visit.
+      reg.update().catch(() => {});
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (reloaded) return;
+        reloaded = true;
+        window.location.reload();
+      });
+    }).catch((e) =>
       console.log("Service worker registration failed:", e.message)
     );
   });
