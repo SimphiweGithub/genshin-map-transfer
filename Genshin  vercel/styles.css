@@ -1013,8 +1013,39 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 .day-filters .btn.active { background: var(--gold-primary); color: var(--text-dark); border-color: var(--gold-primary); }
 
 .alert-card { border-color: rgba(69,197,228,.25); background: rgba(69,197,228,.02); }
-.alerts-list { display: flex; flex-direction: column; gap: 9px; }
-.alert-item  { display: flex; align-items: center; gap: 8px; font-size: .83rem; background: rgba(69,197,228,.04); border-left: 2px solid var(--cyan-primary); padding: 9px 13px; border-radius: 0 3px 3px 0; }
+.alerts-list { display: flex; flex-direction: column; gap: 0; }
+.alert-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.alert-item:last-child { border-bottom: none; }
+.alert-item .card-icon { margin: 0; }
+.alert-icon-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(211,188,142,.15);
+}
+.alert-details { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.alert-title { font-family: 'Cinzel', serif; font-size: .86rem; font-weight: 600; color: var(--text-main); letter-spacing: .3px; }
+.alert-sub { font-size: .72rem; color: var(--text-muted); line-height: 1.4; }
+.alert-avatars { display: flex; gap: 5px; flex-shrink: 0; }
+.alert-avatar { width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(211,188,142,.25); background: var(--bg-dark); flex-shrink: 0; object-fit: cover; }
+.alert-chevron { display: flex; align-items: center; color: var(--text-muted); flex-shrink: 0; margin-left: 2px; }
+@media (max-width: 640px) {
+  .alert-item { flex-wrap: wrap; }
+  .alert-avatars { order: 3; margin-left: 52px; }
+  .alert-chevron { display: none; }
+}
 
 .domains-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
 .domain-card { background: linear-gradient(160deg, rgba(59,66,92,0.92), rgba(37,42,64,0.94)); border: 1px solid var(--card-border); border-radius: 6px; padding: 18px; display: flex; flex-direction: column; gap: 14px; position: relative; overflow: hidden; }

@@ -57,6 +57,7 @@ const SVG = {
   heartF: (s=12) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}"><path d="M8 14s-5.5-3.5-5.5-7.5C2.5 4 4 2.5 5.75 2.5 7 2.5 8 3.5 8 3.5S9 2.5 10.25 2.5C12 2.5 13.5 4 13.5 6.5 13.5 10.5 8 14 8 14z" fill="currentColor"/></svg>`,
   heartE: (s=12) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M8 14s-5.5-3.5-5.5-7.5C2.5 4 4 2.5 5.75 2.5 7 2.5 8 3.5 8 3.5S9 2.5 10.25 2.5C12 2.5 13.5 4 13.5 6.5 13.5 10.5 8 14 8 14z"/></svg>`,
   clip:   (s=16) => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="2" width="10" height="13" rx="1.5"/><path d="M6 1h4a1 1 0 011 1v1H5V2a1 1 0 011-1z"/><line x1="5.5" y1="7" x2="10.5" y2="7"/><line x1="5.5" y1="9.5" x2="10.5" y2="9.5"/><line x1="5.5" y1="12" x2="8.5" y2="12"/></svg>`,
+  chevron:(s=16,c='currentColor') => `<svg class="ic" viewBox="0 0 16 16" width="${s}" height="${s}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>`,
 };
 
 // Parse character name from avatar_side_icon URL
@@ -3339,19 +3340,31 @@ function updateDomainSchedule(dayIndex) {
 
   // Build Personalized alerts based on owned characters
   let alertItemsHTML = "";
-  
+
   if (state.characters && state.characters.length > 0) {
     const ownedCharacterNames = state.characters.map(c => c.name);
 
     todaysTalents.forEach(t => {
       // Find overlap of characters owned by player and characters using this material
       const matchingOwned = t.characters.filter(name => ownedCharacterNames.includes(name));
-      
+
       if (matchingOwned.length > 0) {
+        const avatarsHtml = matchingOwned.slice(0, 6).map(name => {
+          const c = state.characters.find(ch => ch.name === name);
+          const img = c?.image || 'https://gi.yatta.moe/assets/UI/UI_AvatarIcon_Paimon.png';
+          return `<img src="${optImg(img, 64)}" class="alert-avatar" alt="${esc(name)}" title="${esc(name)}" onerror="this.style.display='none'">`;
+        }).join('');
+
         alertItemsHTML += `
-          <div class="alert-item">
-            <span>${SVG.bulb(14)} <strong>${t.name} Books</strong> are farmable today for your character${matchingOwned.length > 1 ? 's' : ''}: 
-            <strong class="text-gold">${matchingOwned.join(", ")}</strong>.</span>
+          <div class="alert-item" style="border-left-color:${t.color}">
+            <span class="card-icon"></span>
+            <span class="alert-icon-frame" style="background:${t.color}1f;border-color:${t.color}66;">${bookIcon(t)}</span>
+            <div class="alert-details">
+              <span class="alert-title">${esc(t.name)}</span>
+              <span class="alert-sub">Farmable today for your character${matchingOwned.length > 1 ? 's' : ''}: <span class="text-gold">${esc(matchingOwned.join(", "))}</span>.</span>
+            </div>
+            <div class="alert-avatars">${avatarsHtml}</div>
+            <span class="alert-chevron">${SVG.chevron(16)}</span>
           </div>
         `;
       }

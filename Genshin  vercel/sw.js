@@ -1,6 +1,6 @@
 /* Teyvat Chrono service worker — offline shell + installability.
    Bump CACHE version to force clients to refresh cached assets. */
-const CACHE = 'teyvat-chrono-v21';
+const CACHE = 'teyvat-chrono-v22';
 const SHELL = ['/', '/index.html', '/styles.css', '/icon.svg', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
