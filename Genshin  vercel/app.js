@@ -1469,7 +1469,7 @@ function updateUI() {
   if (state.dailyCommissionsDone === 4) {
     commStatus.className = "val text-green";
   } else {
-    commStatus.className = "val text-cyan";
+    commStatus.className = "val text-gold";
   }
 
   const kathStatus = document.getElementById("katheryne-status");
@@ -1540,7 +1540,6 @@ function updateUI() {
   // Characters Catalog UI
   updateCharactersCatalogUI();
   renderBuildPriorities();
-  renderResinAdvisor();
 
   // Exploration Map UI
   updateOculiTracker();
@@ -2071,61 +2070,6 @@ function renderBuildPriorities() {
         <span class="build-row-score ${scoreCls}">${r.score}</span>
       </div>`;
   }).join('') + (built > 0 ? `<p class="empty-text" style="margin-top:6px;font-size:.75rem;color:#74c2a0">+ ${built} fully built meta character${built > 1 ? 's' : ''}</p>` : '');
-}
-
-function renderResinAdvisor() {
-  const container = document.getElementById('resin-advisor');
-  if (!container) return;
-
-  if (!state.characters || state.characters.length === 0 || !state.characterDetails || Object.keys(state.characterDetails).length === 0) {
-    container.innerHTML = '';
-    return;
-  }
-
-  const today = new Date().getDay();
-  const tips = [];
-
-  // Cross-reference build priorities with today's farmable talent books
-  const todaysTalents = DOMAIN_MATERIALS.talents.filter(t => t.days.includes(today));
-  const charNames = state.characters.map(c => getCharDisplayName(c));
-
-  for (const mat of todaysTalents) {
-    const matching = mat.characters.filter(name => charNames.includes(name));
-    if (!matching.length) continue;
-
-    for (const name of matching) {
-      const char = state.characters.find(c => getCharDisplayName(c) === name);
-      if (!char) continue;
-      const detail = state.characterDetails[char.id];
-      if (!detail) continue;
-      const skills = (detail.skills || []).filter(s =>
-        s.skill_type === 1 || s.skill_type === 2 || s.skill_type === 3 ||
-        (!s.skill_type && (detail.skills || []).indexOf(s) < 3)
-      ).slice(0, 3);
-      const minTalent = skills.length ? Math.min(...skills.map(s => s.level_current || s.level || 0)) : 10;
-      if (minTalent < 8) {
-        tips.push(`<div class="resin-tip"><span class="resin-tip-icon">${SVG.book(16)}</span><span class="resin-tip-text">Farm <strong>${mat.name}</strong> for <strong>${name}</strong> (talents ${skills.map(s => s.level_current || s.level || 0).join('/')})</span></div>`);
-      }
-    }
-  }
-
-  // Weapon material recommendations
-  // (generic — no per-weapon mapping, just flag if anyone has a low weapon)
-  for (const c of state.characters) {
-    const d = state.characterDetails[c.id];
-    if (!d || !d.weapon) continue;
-    if ((d.weapon.level || 0) < 70 && c.rarity >= 5) {
-      tips.push(`<div class="resin-tip"><span class="resin-tip-icon">${SVG.sword(16)}</span><span class="resin-tip-text">Level <strong>${getCharDisplayName(c)}</strong>'s weapon (Lv.${d.weapon.level} ${d.weapon.name})</span></div>`);
-      if (tips.length >= 4) break;
-    }
-  }
-
-  if (tips.length === 0) {
-    container.innerHTML = '';
-    return;
-  }
-
-  container.innerHTML = `<strong style="font-size:.72rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Today's farming tips</strong>` + tips.slice(0, 4).join('');
 }
 
 window.closeCharDetail = function() {

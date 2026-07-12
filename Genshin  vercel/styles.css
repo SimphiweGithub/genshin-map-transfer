@@ -596,8 +596,8 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
   border-radius: 50%;
   transition: .28s;
 }
-.toggle-container input:checked + .toggle-slider { background: rgba(69,197,228,.18); border-color: var(--cyan-primary); }
-.toggle-container input:checked + .toggle-slider::before { transform: translateX(16px); background: var(--cyan-primary); }
+.toggle-container input:checked + .toggle-slider { background: rgba(211,188,142,.18); border-color: var(--gold-primary); }
+.toggle-container input:checked + .toggle-slider::before { transform: translateX(16px); background: var(--gold-primary); }
 .toggle-label { font-size: .78rem; color: var(--text-muted); }
 
 /* ── Resin Card ──────────────────────────────────────────────────────────── */
@@ -2130,19 +2130,6 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 .planner-projection .proj-rate { color: #47bfe0; font-weight: 600; }
 .planner-projection .proj-date { color: #c8a040; font-weight: 600; }
 .planner-projection .proj-label { color: rgba(255,255,255,.5); }
-
-/* ── Resin spending advisor ────────────────────────────────── */
-.resin-advisor {
-  margin-top: 8px; padding: 8px 10px;
-  background: rgba(200,160,64,.06);
-  border: 1px solid rgba(200,160,64,.12);
-  border-radius: 8px; font-size: .8rem;
-}
-.resin-tip { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
-.resin-tip:last-child { margin-bottom: 0; }
-.resin-tip-icon { flex-shrink: 0; font-size: .9rem; }
-.resin-tip-text { color: rgba(255,255,255,.75); }
-.resin-tip-text strong { color: #c8a040; }
 
 /* ── Banner countdown ──────────────────────────────────────── */
 .banner-countdown-grid {
