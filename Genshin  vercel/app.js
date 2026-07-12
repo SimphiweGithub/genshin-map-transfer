@@ -3546,7 +3546,7 @@ function renderBuildRoadmap(container, buildNow, pullTargets) {
   if (buildNow.length > 0) {
     html += `<div class="roadmap-section">
       <div class="roadmap-section-hdr">
-        <span class="roadmap-icon">⚡</span>
+        <span class="roadmap-icon">${SVG.star4(16,'#d4a017')}</span>
         <div><h3>Build Now</h3><p>You own these — invest now for maximum meta impact</p></div>
       </div>
       <div class="roadmap-list">${buildNow.map(c => item(c, false)).join('')}</div>
@@ -3555,7 +3555,7 @@ function renderBuildRoadmap(container, buildNow, pullTargets) {
   if (pullTargets.length > 0) {
     html += `<div class="roadmap-section">
       <div class="roadmap-section-hdr">
-        <span class="roadmap-icon">🎯</span>
+        <span class="roadmap-icon">${SVG.target(16)}</span>
         <div><h3>Pull Targets</h3><p>S+/S tier characters you don't own — watch their banners</p></div>
       </div>
       <div class="roadmap-list">${pullTargets.map(c => item(c, true)).join('')}</div>
