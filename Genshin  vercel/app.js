@@ -2377,6 +2377,9 @@ function renderWishUI(data) {
   const lastEl = document.getElementById('wish-last-sync-text');
   if (data.fetchedAt) lastEl.textContent = `Last sync: ${new Date(data.fetchedAt).toLocaleString()}`;
 
+  const pityLastEl = document.getElementById('pity-last-updated');
+  if (pityLastEl && data.fetchedAt) pityLastEl.textContent = `Last updated: ${new Date(data.fetchedAt).toLocaleString()}`;
+
   // Pity grid
   const pityGrid = document.getElementById('pity-grid');
   pityGrid.innerHTML = GACHA_BANNERS.map(b => {

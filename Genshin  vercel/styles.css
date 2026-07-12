@@ -1986,6 +1986,18 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
   border-top: 1px solid rgba(255,255,255,.07); margin-top: 6px; padding-top: 7px;
 }
 
+.pity-footer-note {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  margin-top: 18px; padding: 14px 16px;
+  background: rgba(211,188,142,.05);
+  border: 1px solid rgba(211,188,142,.16);
+  border-radius: 6px;
+}
+.pity-footer-text { display: flex; align-items: flex-start; gap: 10px; }
+.pity-footer-icon { flex-shrink: 0; color: var(--gold-primary); margin-top: 3px; }
+.pity-footer-text p { font-size: .78rem; color: rgba(255,255,255,.65); line-height: 1.6; margin: 0; }
+.pity-footer-updated { display: inline-flex; align-items: center; gap: 6px; font-size: .72rem; color: rgba(255,255,255,.4); white-space: nowrap; }
+
 @keyframes pity-pulse { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
 
 /* Pity extras */
