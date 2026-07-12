@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Nunito+Sans:opsz,wght@6..12,300;6..12,400;6..12,600;6..12,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=25">
+  <link rel="stylesheet" href="styles.css?v=26">
 </head>
 <body>
 
@@ -511,28 +511,66 @@
             <h2>Wish History Sync</h2>
           </div>
           <div class="wish-sync-body">
-            <div class="wish-instructions">
-              <p class="wish-hint-title">How to get your AuthKey URL:</p>
-              <ol class="wish-hint-list">
-                <li>Open <strong>Genshin Impact</strong> → click any banner → <strong>History</strong> and let the page fully load</li>
-                <li>Close or minimise the game, then run this in <strong>PowerShell</strong> to copy the URL automatically:
-                  <div class="wish-ps-snippet"><code>$l="$env:USERPROFILE\AppData\LocalLow\miHoYo\Genshin Impact\output_log.txt"; [regex]::Match((Get-Content $l | Select-String "authkey" | Select-Object -Last 1).Line,'https://[^\s]+').Value | Set-Clipboard; "Copied!"</code></div>
-                </li>
-                <li>Paste the copied URL below and click <strong>Fetch Wishes</strong>. Key expires in ~24 h.</li>
-              </ol>
+            <div class="wish-intro-banner">
+              <span class="wish-intro-icon"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M8 0l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="currentColor"/></svg></span>
+              <p>Sync your <strong>Genshin Impact</strong> wish history to view pity, 50/50, and pull analytics. Everything is stored locally in this browser — nothing is saved on our servers.</p>
             </div>
+
+            <div class="wish-steps">
+              <div class="wish-step">
+                <span class="wish-step-badge">1</span>
+                <div class="wish-step-body">
+                  <p class="wish-step-title">Open <strong>Genshin Impact</strong></p>
+                  <p class="wish-step-desc">Click any banner → <strong>History</strong> and let the page fully load.</p>
+                </div>
+              </div>
+              <div class="wish-step">
+                <span class="wish-step-badge">2</span>
+                <div class="wish-step-body">
+                  <p class="wish-step-title">Run in <strong>PowerShell</strong></p>
+                  <p class="wish-step-desc">Close or minimise the game, then run this to copy the URL automatically:</p>
+                  <div class="wish-ps-snippet">
+                    <code>$l="$env:USERPROFILE\AppData\LocalLow\miHoYo\Genshin Impact\output_log.txt"; [regex]::Match((Get-Content $l | Select-String "authkey" | Select-Object -Last 1).Line,'https://[^\s]+').Value | Set-Clipboard; "Copied!"</code>
+                    <button type="button" id="wish-copy-ps-btn" class="wish-copy-btn" title="Copy command" aria-label="Copy command">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="wish-step">
+                <span class="wish-step-badge">3</span>
+                <div class="wish-step-body">
+                  <p class="wish-step-title">Paste &amp; Fetch</p>
+                  <p class="wish-step-desc">Paste the copied URL below and click <strong>Fetch Wishes</strong>. Key expires in ~24 h.</p>
+                </div>
+              </div>
+            </div>
+
             <div class="wish-input-row">
               <input type="text" id="wish-authkey-input" class="form-input" placeholder="Paste your wish history URL here…" autocomplete="off">
-              <button id="wish-fetch-btn" class="btn btn-primary">Fetch Wishes</button>
+              <button id="wish-fetch-btn" class="btn btn-gold">
+                <svg viewBox="0 0 16 16" width="14" height="14"><path d="M8 0l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="currentColor"/></svg>
+                Fetch Wishes
+              </button>
             </div>
             <div id="wish-sync-status" class="wish-sync-status hidden"></div>
             <div class="wish-actions-row">
-              <button id="wish-export-btn" class="btn btn-secondary btn-sm">Export JSON</button>
+              <button id="wish-export-btn" class="btn btn-secondary btn-sm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export JSON
+              </button>
               <label class="btn btn-secondary btn-sm" style="cursor:pointer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 Import JSON <input type="file" id="wish-import-file" accept=".json" style="display:none">
               </label>
-              <button id="wish-clear-btn" class="btn btn-danger btn-sm">Clear Stored Data</button>
-              <span id="wish-last-sync" class="wish-last-sync"></span>
+              <button id="wish-clear-btn" class="btn btn-error btn-sm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Clear Stored Data
+              </button>
+              <span class="wish-last-sync">
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><path d="M8 4v4.5l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span id="wish-last-sync-text"></span>
+              </span>
             </div>
           </div>
         </div>
@@ -826,7 +864,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=36"></script>
+  <script src="app.js?v=37"></script>
 </body>
 </html>
 

@@ -2374,7 +2374,7 @@ function renderWishUI(data) {
   if (!data) return;
 
   // Last sync label
-  const lastEl = document.getElementById('wish-last-sync');
+  const lastEl = document.getElementById('wish-last-sync-text');
   if (data.fetchedAt) lastEl.textContent = `Last sync: ${new Date(data.fetchedAt).toLocaleString()}`;
 
   // Pity grid
@@ -2762,7 +2762,16 @@ function initWishTab() {
     document.getElementById('pity-grid').innerHTML = '<p class="empty-text">Sync wish history to see pity counters.</p>';
     document.getElementById('wish-history-list').innerHTML = '<p class="empty-text">No wish data. Sync above to load your history.</p>';
     document.getElementById('wish-stats-card').style.display = 'none';
-    document.getElementById('wish-last-sync').textContent = '';
+    document.getElementById('wish-last-sync-text').textContent = '';
+  });
+
+  document.getElementById('wish-copy-ps-btn')?.addEventListener('click', (e) => {
+    const btn = e.currentTarget;
+    const code = btn.closest('.wish-ps-snippet').querySelector('code').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      btn.classList.add('copied');
+      setTimeout(() => btn.classList.remove('copied'), 1500);
+    }).catch(() => {}); // clipboard permission denied — the code block is still select-all-able manually
   });
 
   document.getElementById('wish-filter-row')?.addEventListener('click', e => {

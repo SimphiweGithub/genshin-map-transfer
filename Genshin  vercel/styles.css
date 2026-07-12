@@ -1848,14 +1848,50 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 /* Sync card */
 .wish-sync-body { padding: 4px 0 0; display: flex; flex-direction: column; gap: 14px; }
 
-.wish-hint-title { font-size: .75rem; color: var(--gold-primary); font-weight: 600; margin-bottom: 6px; }
-.wish-hint-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
-.wish-hint-list li { font-size: .75rem; color: rgba(255,255,255,.55); line-height: 1.5; }
-.wish-hint-list code { background: rgba(255,255,255,.08); border-radius: 4px; padding: 1px 5px; font-size: .7rem; color: #47bfe0; }
-.wish-hint-list strong { color: rgba(255,255,255,.8); }
+/* Intro banner */
+.wish-intro-banner {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: rgba(211,188,142,.05);
+  border: 1px solid rgba(211,188,142,.16);
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: .8rem; color: rgba(255,255,255,.75); line-height: 1.55;
+}
+.wish-intro-banner strong { color: var(--gold-primary); }
+.wish-intro-icon { flex-shrink: 0; color: var(--gold-primary); margin-top: 2px; }
+
+/* Numbered steps, connected by a dotted line */
+.wish-steps { display: flex; flex-direction: column; }
+.wish-step { display: flex; gap: 14px; position: relative; }
+.wish-step:not(:last-child) { padding-bottom: 20px; }
+.wish-step-badge {
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+  border: 1.5px solid var(--gold-primary);
+  background: rgba(211,188,142,.08);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif; font-weight: 700; font-size: .82rem; color: var(--gold-primary);
+  position: relative; z-index: 1;
+}
+.wish-step:not(:last-child) .wish-step-badge::after {
+  content: '';
+  position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  width: 0; height: 20px;
+  border-left: 1.5px dashed rgba(211,188,142,.35);
+}
+.wish-step-body { flex: 1; min-width: 0; padding-top: 3px; }
+.wish-step-title { font-family: 'Cinzel', serif; font-size: .82rem; font-weight: 600; color: var(--text-main); margin-bottom: 3px; }
+.wish-step-title strong { color: var(--gold-primary); }
+.wish-step-desc { font-size: .78rem; color: var(--text-muted); line-height: 1.55; }
+.wish-step-desc strong { color: rgba(255,255,255,.85); }
 
 .wish-input-row { display: flex; gap: 8px; }
 .wish-input-row .form-input { flex: 1; }
+.form-input {
+  background: rgba(0,0,0,.4); border: 1px solid rgba(200,160,90,.15); color: var(--text-main);
+  border-radius: 3px; padding: 9px 13px; font-size: .88rem; font-family: inherit;
+}
+.form-input:focus { border-color: var(--gold-primary); outline: none; box-shadow: 0 0 6px rgba(200,160,90,.2); }
+.form-input::placeholder { color: var(--text-muted); }
 
 .wish-sync-status { padding: 8px 12px; border-radius: 8px; font-size: .8rem; }
 .wish-sync-status.success { background: rgba(116,194,160,.12); border: 1px solid rgba(116,194,160,.3); color: #74c2a0; }
@@ -1863,7 +1899,7 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 .wish-sync-status:not(.success):not(.error) { background: rgba(200,160,90,.08); border: 1px solid rgba(200,160,90,.2); color: rgba(255,255,255,.7); }
 
 .wish-actions-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.wish-last-sync { font-size: .7rem; color: rgba(255,255,255,.35); margin-left: auto; }
+.wish-last-sync { display: inline-flex; align-items: center; gap: 5px; font-size: .7rem; color: rgba(255,255,255,.35); margin-left: auto; }
 
 /* Pity cards */
 .pity-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; }
@@ -2037,18 +2073,37 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 
 .wish-ps-snippet {
   margin-top: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   background: rgba(0,0,0,.35);
-  border: 1px solid rgba(71,191,224,.2);
+  border: 1px solid rgba(211,188,142,.18);
   border-radius: 6px;
   padding: 8px 10px;
-  overflow-x: auto;
 }
 .wish-ps-snippet code {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
   font-size: .67rem;
   color: #47bfe0;
   white-space: pre;
   user-select: all;
 }
+.wish-copy-btn {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  background: rgba(211,188,142,.08);
+  border: 1px solid rgba(211,188,142,.2);
+  border-radius: 4px;
+  color: var(--gold-primary);
+  cursor: pointer;
+  transition: background var(--transition-speed), border-color var(--transition-speed);
+}
+.wish-copy-btn svg { width: 13px; height: 13px; }
+.wish-copy-btn:hover { background: rgba(211,188,142,.16); border-color: rgba(211,188,142,.4); }
+.wish-copy-btn.copied { color: #74c2a0; border-color: rgba(116,194,160,.4); background: rgba(116,194,160,.12); }
 
 /* ── Talent display in character detail ────────────────────── */
 .char-detail-talents {
