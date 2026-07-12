@@ -1947,12 +1947,11 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
   gap: 4px;
 }
 
-/* Circular glow ring around the banner icon */
+/* Glow behind the banner icon (no ring border around it) */
 .pity-icon-ring {
   width: 64px; height: 64px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   align-self: center; margin-bottom: 6px;
-  border: 1.5px solid color-mix(in srgb, var(--pity-color) 45%, transparent);
   background: radial-gradient(circle, color-mix(in srgb, var(--pity-color) 16%, transparent) 0%, transparent 72%);
   box-shadow: 0 0 16px color-mix(in srgb, var(--pity-color) 22%, transparent);
 }
