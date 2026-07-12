@@ -11,7 +11,7 @@
     }
   },
   "images": {
-    "sizes": [32, 40, 48, 52, 56, 60, 64, 80, 90, 92, 100, 110, 120, 128, 200, 256, 384, 560, 640],
+    "sizes": [32, 36, 40, 48, 52, 56, 60, 64, 80, 90, 92, 100, 110, 120, 128, 200, 256, 384, 560, 640],
     "remotePatterns": [
       { "protocol": "https", "hostname": "**.hoyolab.com" },
       { "protocol": "https", "hostname": "**.hoyoverse.com" },
@@ -32,7 +32,7 @@
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.hoyolab.com https://*.hoyoverse.com https://gi.yatta.moe https://static.icy-veins.com; connect-src 'self' https://*.hoyolab.com https://*.hoyoverse.com https://gi.yatta.moe https://static.icy-veins.com; frame-ancestors 'none';"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.hoyolab.com https://*.hoyoverse.com https://gi.yatta.moe https://static.icy-veins.com; media-src 'self' https://assets.mixkit.co; connect-src 'self' https://*.hoyolab.com https://*.hoyoverse.com https://gi.yatta.moe https://static.icy-veins.com https://fonts.googleapis.com https://fonts.gstatic.com https://assets.mixkit.co; frame-ancestors 'none';"
         }
       ]
     }
