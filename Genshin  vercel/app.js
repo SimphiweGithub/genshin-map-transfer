@@ -3081,44 +3081,38 @@ function renderAbyssTeamComps(d) {
   container.innerHTML = freqHtml + floorsHtml;
 }
 
-// Chamber timing/efficiency — derived from battles[].timestamp. A naive
-// first-clear-to-last-clear span per floor is misleading: floors are
-// routinely cleared across separate sessions (one chamber today, the rest
-// tomorrow), and that real-world gap would silently inflate "time spent" to
-// something impossible. Instead, sum only the gaps between *consecutive*
-// clears that are under SESSION_GAP_S — anything longer is treated as a
-// break and excluded rather than counted as active time.
-const ABYSS_SESSION_GAP_S = 600; // 10 minutes
-
+// Chamber timing/efficiency — derived from battles[].timestamp. Only the gap
+// BETWEEN a single chamber's own two half-clears is trustworthy: you're
+// already in that chamber, so however long it took (including failed
+// retries, which don't leave their own timestamp) is real struggle time.
+// The gap BETWEEN chambers is not trustworthy — it can be seconds of
+// re-teaming or hours of a real-world break, and there's no way to tell
+// which from timestamps alone. So we sum only the within-chamber gaps and
+// don't attempt to classify or count the between-chamber ones at all,
+// rather than guessing with a threshold (which previously misclassified a
+// long real fight as a "break" and zeroed it out).
 function renderAbyssTiming(d) {
   const container = document.getElementById('abyss-timing');
   if (!container) return;
 
-  const floors = (d?.floors || []).filter(fl => fl.levels?.some(lv => lv.battles?.length));
+  const floors = (d?.floors || []).filter(fl => fl.levels?.some(lv => lv.battles?.length >= 2));
   if (!floors.length) {
     container.innerHTML = '<p class="empty-text">No timing data for this period.</p>';
     return;
   }
 
   const rows = floors.map(fl => {
-    const stamps = [];
-    (fl.levels || []).forEach(lv => (lv.battles || []).forEach(b => {
-      if (b.timestamp) stamps.push(Number(b.timestamp));
-    }));
-    stamps.sort((a, b) => a - b);
-    if (stamps.length < 2) return null;
-
-    let active = 0, excluded = 0;
-    for (let i = 1; i < stamps.length; i++) {
-      const gap = stamps[i] - stamps[i - 1];
-      if (gap <= ABYSS_SESSION_GAP_S) active += gap; else excluded++;
-    }
-    if (active <= 0) return null;
-    return { index: fl.index, active, excluded };
+    let total = 0, chambers = 0;
+    (fl.levels || []).forEach(lv => {
+      const stamps = (lv.battles || []).map(b => Number(b.timestamp)).filter(Boolean).sort((a, b) => a - b);
+      if (stamps.length >= 2) { total += stamps[stamps.length - 1] - stamps[0]; chambers++; }
+    });
+    if (!chambers) return null;
+    return { index: fl.index, total, chambers };
   }).filter(Boolean);
 
   if (!rows.length) {
-    container.innerHTML = '<p class="empty-text">Not enough same-session battle data to estimate timing.</p>';
+    container.innerHTML = '<p class="empty-text">Not enough same-chamber battle data to estimate timing.</p>';
     return;
   }
 
@@ -3126,28 +3120,28 @@ function renderAbyssTiming(d) {
     const m = Math.floor(s / 60), sec = Math.round(s % 60);
     return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
   };
-  const totalActive = rows.reduce((sum, r) => sum + r.active, 0);
-  const maxActive = Math.max(...rows.map(r => r.active), 1);
-  const slowest = rows.reduce((a, b) => (b.active > a.active ? b : a), rows[0]);
+  const totalTime = rows.reduce((sum, r) => sum + r.total, 0);
+  const maxTime = Math.max(...rows.map(r => r.total), 1);
+  const slowest = rows.reduce((a, b) => (b.total > a.total ? b : a), rows[0]);
 
   container.innerHTML = `
     <div class="abyss-battle-summary">
-      <span class="text-cyan">Active Time: ${fmt(totalActive)}</span>
-      <span class="text-gold">Slowest: Floor ${slowest.index} (${fmt(slowest.active)})</span>
+      <span class="text-cyan">Combined Chamber Time: ${fmt(totalTime)}</span>
+      <span class="text-gold">Slowest: Floor ${slowest.index} (${fmt(slowest.total)})</span>
     </div>
     <div class="progress-bar-list">
       ${rows.map(r => `
         <div class="ledger-breakdown-row">
           <div class="ledger-breakdown-info">
-            <span>Floor ${r.index}${r.excluded ? ` <span class="text-muted">(${r.excluded} break${r.excluded > 1 ? 's' : ''} excluded)</span>` : ''}</span>
-            <span class="text-purple">${fmt(r.active)}</span>
+            <span>Floor ${r.index}</span>
+            <span class="text-purple">${fmt(r.total)}</span>
           </div>
           <div class="ledger-breakdown-bar">
-            <div class="ledger-breakdown-fill" style="width:${(r.active / maxActive) * 100}%;"></div>
+            <div class="ledger-breakdown-fill" style="width:${(r.total / maxTime) * 100}%;"></div>
           </div>
         </div>`).join('')}
     </div>
-    <p class="empty-text abyss-timing-note">Time between consecutive clears within a floor, excluding gaps over 10 minutes (treated as a break, not counted as active time).</p>`;
+    <p class="empty-text abyss-timing-note">Time from each chamber's first half-clear to its second, summed per floor. Time between chambers (menu, re-teaming, possible breaks) isn't included — it can't be reliably told apart from real play time.</p>`;
 }
 
 // Season-over-season history, read from localStorage (see saveAbyssSnapshot).
