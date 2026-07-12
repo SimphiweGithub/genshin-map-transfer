@@ -2744,10 +2744,9 @@ function renderWishList(data, filterType) {
   list.innerHTML = wishes.map(w => {
     const r = parseInt(w.rank_type);
     const col = r === 5 ? '#d4a017' : r === 4 ? '#9b59b6' : 'rgba(255,255,255,.38)';
-    const stars = '★'.repeat(r);
     const bn = bannerInfo(w._banner);
     return `<div class="wish-item wish-r${r}">
-      <span class="wish-stars" style="color:${col}">${stars}</span>
+      <span class="wish-stars">${rarityStars(r, col)}</span>
       <span class="wish-name">${esc(w.name)}</span>
       <span class="wish-type">${esc(w.item_type)}</span>
       <span class="wish-banner-tag" style="color:${bn.color || '#aaa'}">${esc(bn.name || '')}</span>
@@ -3185,7 +3184,7 @@ function renderAbyssHistory() {
         <div class="ledger-breakdown-row">
           <div class="ledger-breakdown-info">
             <span>${dateFmt(h.start_time)} – ${dateFmt(h.end_time)}</span>
-            <span class="text-gold">Floor ${h.max_floor || '—'} · ${h.total_star || 0}/36★</span>
+            <span class="text-gold">Floor ${h.max_floor || '—'} · ${h.total_star || 0}/36${SVG.star4(10,'#d4a017')}</span>
           </div>
           <div class="ledger-breakdown-bar">
             <div class="ledger-breakdown-fill" style="width:${((h.total_star || 0) / 36) * 100}%;"></div>
