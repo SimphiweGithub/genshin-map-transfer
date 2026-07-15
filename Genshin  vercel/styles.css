@@ -1539,6 +1539,7 @@ svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
 
 /* ── Tier List Table ─────────────────────────────────── */
 .tier-source-btn {
+  display: inline-flex; align-items: center; gap: 5px;
   font-size: 0.72rem; color: #c9a56e; text-decoration: none;
   padding: 3px 10px; border: 1px solid rgba(201,165,110,0.35); border-radius: 20px;
   transition: background 0.2s, color 0.2s; white-space: nowrap; flex-shrink: 0;
